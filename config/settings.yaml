@@ -1,0 +1,84 @@
+# ==============================================================================
+# BẢNG ĐIỀU KHUYỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
+# Dự án: markdown_to_pdf_engine
+# Kiến trúc: Separation of Concerns (SoC) - Configuration Layer
+# ==============================================================================
+
+# 1. CHUẨN MÃ HÓA TOÀN CỤC (GLOBAL ENCODING STANDARD)
+# Cưỡng chế luồng Đọc (Read), Ghi (Write) và Render theo UTF-8
+# Triệt tiêu hoàn toàn sự cố trôi dạt mã hóa cp1252 trên Windows 11
+global_encoding_standard: "utf-8"
+
+# 2. ĐIỀU HƯỚNG THƯ MỤC VÀ XỬ LÝ HÀNG LOẠT (DIRECTORY ROUTING & BATCH PROCESSING)
+# Cấu hình dây chuyền tự động quét và phân loại tài liệu đầu vào/đầu ra
+directory_routing:
+  # Tên thư mục chứa các tệp Markdown cần chuyển đổi
+  input_directory: "input"
+  
+  # Tên thư mục chứa các tệp PDF thành phẩm sau biên dịch
+  output_directory: "output"
+  
+  # Kích hoạt quét đệ quy (Recursive Search) vào tất cả các thư mục con bên trong input/
+  recursive_search: true
+  
+  # Danh sách các đuôi tệp văn bản được phép nạp vào đường ống xử lý
+  allowed_extensions:
+    - ".md"
+    - ".markdown"
+    - ".mdown"
+  
+  # Cho phép tự động ghi đè tệp PDF thành phẩm nếu đã tồn tại bên thư mục output/
+  overwrite_existing: true
+  
+  # Tự động kiểm tra và khởi tạo thư mục input/ và output/ nếu chưa tồn tại
+  auto_create_directories: true
+  
+  # Bảo tồn nguyên vẹn cấu trúc thư mục con từ input/ sang output/
+  # Ví dụ: input/du_an_a/baocao.md -> output/du_an_a/baocao.pdf
+  preserve_subfolder_structure: true
+
+# 3. NHUỘM MÀU CÚ PHÁP MÃ NGUỒN (SYNTAX HIGHLIGHTING PROFILE)
+# Định danh chủ đề (Theme) Pygments dùng để tô màu từ khóa, biến và hàm trong Code Block
+syntax_highlighting_profile: "monokai"
+
+# 4. GIỚI HẠN ĐỘ SÂU DẤU TRANG TIÊU ĐỀ (HEADING RETENTION & ANCHORS)
+# Quy định ranh giới phân cấp cấu hình Dấu trang (Bookmarks) và Mỏ neo HTML
+heading_retention_depth:
+  # Cấp độ tiêu đề tối đa được ánh xạ thành Bookmark trong PDF (Cấp 1 đến Cấp 4)
+  max_bookmark_level: 4
+  
+  # Kích hoạt tự động gắn thuộc tính id mỏ neo vào các thẻ tiêu đề HTML
+  enable_heading_anchors: true
+  
+  # Cưỡng chế chuẩn hóa chuỗi id tiêu đề về dạng ASCII không dấu chuẩn SEO/HTML
+  normalize_anchor_ascii: true
+
+# 5. THÔNG SỐ TRANG IN VẬT LÝ (DOCUMENT LAYOUT CONFIGURATION)
+# Cấu hình kích thước trang in, lề văn bản và cơ chế xử lý khối mã tràn viền
+document_layout:
+  # Kích thước khổ giấy in tiêu chuẩn
+  page_size: "A4"
+  
+  # Khoảng cách lề trang in (Top, Right, Bottom, Left)
+  margin: "20mm"
+  
+  # Quy tắc bẻ dòng tự động cho khối mã nguồn vượt quá độ rộng trang in
+  code_overflow_handling: "break-all"
+
+# 6. CẤU HÌNH MỸ THUẬT CHỮ VÀ PHÔNG CHỮ HỆ THỐNG (TYPOGRAPHY CONFIGURATION)
+# Bộ phông chữ phòng thủ chống lỗi hiển thị, vỡ font, bóp mỏng chữ Tiếng Việt trên Windows 11
+typography_configuration:
+  # Chuỗi ưu tiên phông chữ văn bản (Font Stack) hỗ trợ trọn vẹn Tiếng Việt Unicode
+  font_family: '"Segoe UI", "Arial", "Calibri", "Tahoma", sans-serif'
+  
+  # Phông chữ cố định chiều rộng (Monospace) dành cho khối mã nguồn và code nội dòng
+  code_font_family: '"Consolas", "Courier New", monospace'
+  
+  # Kích thước chữ cơ sở cho đoạn văn bản
+  base_font_size: "11pt"
+  
+  # Khoảng cách giữa các dòng văn bản (Tối ưu độ đọc)
+  line_height: "1.6"
+  
+  # Mã màu văn bản chuẩn (Tránh màu đen tuyệt đối gây mỏi mắt)
+  text_color: "#1a1a1a"

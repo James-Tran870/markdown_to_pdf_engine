@@ -1,0 +1,33 @@
+# ==============================================================================
+# TỆP LOẠI TRỪ GIT (GITIGNORE SCHEMA)
+# Dự án: markdown_to_pdf_engine
+# ==============================================================================
+
+# 1. BỘ NHỚ ĐỆM VÀ TỆP TRÌNH THÔNG DỊCH PYTHON (PYTHON CACHE)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# 2. MÔI TRƯỜNG ẢO (VIRTUAL ENVIRONMENTS)
+# Bỏ qua thư mục venv/ chứa hàng ngàn tệp thư viện nặng
+venv/
+.venv/
+env/
+ENV/
+
+# 3. DỮ LIỆU ĐẦU VÀO VÀ THÀNH PHẨM PDF (LOCAL I/O DATA)
+# Bỏ qua các tệp PDF thành phẩm và dữ liệu thử nghiệm cá nhân
+output/*.pdf
+temp_redteam_workspace/
+
+# 4. TỆP CẤU HÌNH VÀ BỘ NHỚ TẠM CỦA TRÌNH BIÊN TẬP (IDE & OS GARBAGE)
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
+*.tmp
+
+# Tệp rác tự động của hệ điều hành Windows
+Thumbs.db
+Desktop.ini
