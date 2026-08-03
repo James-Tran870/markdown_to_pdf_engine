@@ -31,3 +31,27 @@ temp_redteam_workspace/
 # Tệp rác tự động của hệ điều hành Windows
 Thumbs.db
 Desktop.ini
+
+# ==============================================================================
+# 5. TỆP TRUNG GIAN DỤNG CỤ BIÊN DỊCH (RENDER & AST INTERMEDIATE ARTIFACTS)
+# Bỏ qua tệp HTML/CSS phôi tạm do markdown-it-py/WeasyPrint sinh ra
+*.html
+*.css.tmp
+temp/
+build/
+dist/
+
+# 6. NHẬT KÝ VẬN HÀNH VÀ BÁO CÁO KIỂM THỬ (RED-TEAM LOGS & STRESS TEST)
+# Bỏ qua nhật ký rò rỉ UTF-8 và kết quả thử nghiệm tràn viền
+*.log
+logs/
+redteam_reports/
+*.stacktrace
+
+# 7. CẤU HÌNH LOCAL VÀ DỮ LIỆU THỬ NGHIỆM CÁ NHÂN (LOCAL CONFIG & TEST INPUTS)
+# Giữ lại input/input_sample.md, loại trừ các file test cá nhân trong thư mục input
+.env
+config.local.yaml
+input/*
+!input/input_sample.md
+!input/.gitkeep
