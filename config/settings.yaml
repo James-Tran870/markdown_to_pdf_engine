@@ -82,3 +82,20 @@ typography_configuration:
   
   # Mã màu văn bản chuẩn (Tránh màu đen tuyệt đối gây mỏi mắt)
   text_color: "#1a1a1a"
+
+# 7. CẤU HÌNH ĐÁNH SỐ TIÊU ĐỀ TỰ ĐỘNG (HEADING NUMBERING CONFIGURATION)
+# Điều khiển tính năng tự động đếm và chèn ký tự số vào trước tiêu đề trong bản in PDF
+heading_numbering_system:
+  # Kích hoạt tính năng tự động đánh số tiêu đề (True: Bật, False: Tắt)
+  enable_auto_numbering: true
+  
+  # Định dạng đánh số cho tiêu đề Cấp 1 (H1)
+  # Giá trị chấp nhận: "roman" (Chữ số La Mã: I, II, III) hoặc "decimal" (Chữ số tự nhiên: 1, 2, 3)
+  h1_numbering_style: "roman"
+  
+  # Định dạng đánh số cho tiêu đề Cấp con (H2, H3, H4)
+  # Giá trị chấp nhận: "decimal" (Phân cấp tự nhiên: 1.1, 1.2, 1.1.1) hoặc "none" (Không đánh số cấp con)
+  sub_heading_numbering_style: "decimal"
+  
+  # Ký tự phân cách giữa chỉ số thứ tự và nội dung tiêu đề
+  number_separator: ". "

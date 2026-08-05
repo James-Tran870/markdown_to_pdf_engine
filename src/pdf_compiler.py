@@ -41,7 +41,6 @@ def _suppress_c_stderr():
             os.close(saved_stderr_fd)
     except (AttributeError, io.UnsupportedOperation, OSError):
         # Khoanh vùng chính xác các ngoại lệ khi thao tác File Descriptor thất bại
-        # Đảm bảo tuân thủ quy tắc linter Ruff (BLE001) và duy trì tính an toàn hệ thống
         yield
 
 
@@ -77,29 +76,92 @@ with _suppress_c_stderr():
 class PDFCompiler:
     """Động cơ biên dịch HTML và CSS Paged Media thành tệp PDF chất lượng cao."""
 
-    def __init__(self, output_encoding: str = "utf-8"):
+    def __init__(
+        self,
+        output_encoding: str = "utf-8",
+        numbering_config: dict | None = None,
+    ):
+        """Khởi tạo động cơ PDF Compiler với tham số mã hóa và cấu hình đánh số."""
         self.output_encoding = output_encoding
+        self.numbering_config = numbering_config or {}
+
+    def _generate_css_counters(self) -> str:
+        """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề."""
+        enable_auto = self.numbering_config.get("enable_auto_numbering", True)
+        if not enable_auto:
+            return ""
+
+        h1_style = self.numbering_config.get("h1_numbering_style", "roman")
+        sub_style = self.numbering_config.get("sub_heading_numbering_style", "decimal")
+        separator = self.numbering_config.get("number_separator", ". ")
+
+        # Ánh xạ kiểu đánh số La Mã (upper-roman) hoặc số tự nhiên (decimal)
+        h1_counter_type = "upper-roman" if h1_style == "roman" else "decimal"
+
+        if sub_style == "none":
+            return f"""
+            body {{
+                counter-reset: h1counter;
+            }}
+            h1::before {{
+                counter-increment: h1counter;
+                content: counter(h1counter, {h1_counter_type}) "{separator}";
+            }}
+            """
+
+        return f"""
+        body {{
+            counter-reset: h1counter h2counter h3counter h4counter;
+        }}
+        h1 {{
+            counter-reset: h2counter;
+        }}
+        h2 {{
+            counter-reset: h3counter;
+        }}
+        h3 {{
+            counter-reset: h4counter;
+        }}
+        h1::before {{
+            counter-increment: h1counter;
+            content: counter(h1counter, {h1_counter_type}) "{separator}";
+        }}
+        h2::before {{
+            counter-increment: h2counter;
+            content: counter(h2counter, decimal) "{separator}";
+        }}
+        h3::before {{
+            counter-increment: h3counter;
+            content: counter(h2counter, decimal) "." counter(h3counter, decimal) "{separator}";
+        }}
+        h4::before {{
+            counter-increment: h4counter;
+            content: counter(h2counter, decimal) "." counter(h3counter, decimal) "." counter(h4counter, decimal) "{separator}";
+        }}
+        """
 
     def compile_to_pdf(
         self, html_content: str, pygments_css: str, output_path: Path
     ) -> None:
         """Đóng gói HTML và CSS Paged Media thành tệp PDF hoàn chỉnh chuẩn Typography."""
-        paged_media_css = """
-        @page { 
+        dynamic_counters_css = self._generate_css_counters()
+
+        paged_media_css = f"""
+        @page {{ 
             size: A4; 
             margin: 20mm; 
-        }
+        }}
         
-        body {
+        body {{
             font-family: "Segoe UI", "Arial", "Calibri", "Tahoma", sans-serif;
             font-size: 11pt;
             line-height: 1.6;
             color: #1a1a1a;
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
-        }
+        }}
 
-        h1, h2, h3, h4, h5, h6 {
+        h1, h2, h3, h4, h5, h6 {{
             font-family: "Segoe UI Semibold", "Arial Bold", sans-serif;
             font-weight: bold;
             color: #000000;
@@ -108,25 +170,27 @@ class PDFCompiler:
             margin-bottom: 0.6em;
             word-spacing: normal;
             bookmark-label: content();
-        }
+        }}
 
-        h1 { bookmark-level: 1; font-size: 20pt; }
-        h2 { bookmark-level: 2; font-size: 15pt; }
-        h3 { bookmark-level: 3; font-size: 13pt; }
-        h4 { bookmark-level: 4; font-size: 11pt; }
+        h1 {{ bookmark-level: 1; font-size: 20pt; }}
+        h2 {{ bookmark-level: 2; font-size: 15pt; }}
+        h3 {{ bookmark-level: 3; font-size: 13pt; }}
+        h4 {{ bookmark-level: 4; font-size: 11pt; }}
 
-        code, pre { 
+        {dynamic_counters_css}
+
+        code, pre {{ 
             font-family: "Consolas", "Courier New", monospace;
             font-size: 9.5pt;
             word-break: break-all; 
             white-space: pre-wrap; 
-        }
+        }}
 
-        .highlight {
+        .highlight {{
             padding: 10px;
             border-radius: 4px;
             margin-bottom: 1em;
-        }
+        }}
         """
 
         full_document = f"""<!DOCTYPE html>

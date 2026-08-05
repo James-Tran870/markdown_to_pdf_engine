@@ -57,10 +57,14 @@ def execute_single_file_pipeline(
 ) -> bool:
     """Biên dịch một tệp Markdown duy nhất sang PDF với cơ chế cô lập ngoại lệ cụ thể."""
     try:
+        # Trích xuất các tham số cấu hình cơ bản
         encoding_standard = config.get("global_encoding_standard", "utf-8")
         theme_profile = config.get("syntax_highlighting_profile", "monokai")
         heading_config = config.get("heading_retention_depth", {})
         max_bookmark_level = heading_config.get("max_bookmark_level", 4)
+
+        # MỞ RỘNG BĂNG CHUYỀN: Trích xuất khối cấu hình đánh số tiêu đề tự động
+        numbering_config = config.get("heading_numbering_system", {})
 
         # 1. Khởi tạo và nạp tệp qua bộ phân tích Cây Cú Pháp Trừu Tượng (AST)
         parser = ASTParser(encoding_standard=encoding_standard)
@@ -80,7 +84,11 @@ def execute_single_file_pipeline(
         output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
 
         # 5. Biên dịch Paged Media CSS và xuất tệp PDF hoàn chỉnh
-        compiler = PDFCompiler(output_encoding=encoding_standard)
+        # Truyền bổ sung numbering_config vào động cơ PDFCompiler
+        compiler = PDFCompiler(
+            output_encoding=encoding_standard,
+            numbering_config=numbering_config,
+        )
         compiler.compile_to_pdf(
             html_content=rendered_html,
             pygments_css=pygments_css,

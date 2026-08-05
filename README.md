@@ -1,4 +1,4 @@
-# 🖨️ MARKDOWN TO PDF ENGINE (Lõi Biên dịch Tài liệu Cục bộ)
+# MARKDOWN TO PDF ENGINE (Lõi Biên dịch Tài liệu Cục bộ)
 
 **Một hệ thống đường ống dữ liệu (Data Pipeline) hoàn toàn tự động, chuyên trách việc chuyển đổi hàng loạt tệp Markdown sang định dạng PDF sắc nét ngay trên môi trường Windows 11 cục bộ.**
 
@@ -6,13 +6,13 @@ Dự án này được thiết kế dựa trên tư duy phân tích hệ thống
 
 ---
 
-## 🏛️ TRIẾT LÝ KIẾN TRÚC VÀ CƠ CHẾ PHÒNG THỦ (ARCHITECTURAL PHILOSOPHY)
+## TRIẾT LÝ KIẾN TRÚC VÀ CƠ CHẾ PHÒNG THỦ (ARCHITECTURAL PHILOSOPHY)
 
 Để hiểu rõ cách hệ thống này vận hành, hãy hình dung dự án giống như một **Nhà máy In ấn Công nghiệp Khép kín**. Thay vì cho phép mọi công nhân tùy ý can thiệp vào dây chuyền, nhà máy này vận hành dựa trên 3 nguyên tắc bất biến nhằm loại trừ mọi rủi ro hỏng hóc:
 
 ### 1. Phân tách Mối quan tâm (Separation of Concerns - SoC)
 * **Ẩn dụ đời thực:** Trong một nhà hàng, Bếp Trưởng (Mã logic Python) không bao giờ tự mình quyết định giá tiền hay tên món ăn; họ nấu ăn dựa trên một cuốn Thực Đơn (Tệp cấu hình) do Quản lý quy định. Nếu muốn đổi món, bạn đổi Thực Đơn, không phải thay Bếp Trưởng.
-* **Áp dụng vào hệ thống:** Chúng ta tách rời hoàn toàn tham số điều khiển khỏi mã nguồn cốt lõi. Mọi tiến trình biên dịch đều phải nạp cấu hình từ một đối tượng YAML chuyên biệt (`settings.yaml`) để đảm bảo tính tái sử dụng. Toàn bộ các thông số như lề giấy, chuẩn mã hóa, màu sắc từ khóa mã nguồn, hay giới hạn độ sâu của dấu trang (Bookmarks) đều được khai báo tại đây. Điều này cho phép người dùng điều khiển toàn bộ nhà máy mà không cần chạm vào một dòng mã Python nào.
+* **Áp dụng vào hệ thống:** Chúng ta tách rời hoàn toàn tham số điều khiển khỏi mã nguồn cốt lõi. Mọi tiến trình biên dịch đều phải nạp cấu hình từ một đối tượng YAML chuyên biệt (`settings.yaml`) để đảm bảo tính tái sử dụng. Toàn bộ các thông số như lề giấy, chuẩn mã hóa, màu sắc từ khóa mã nguồn, giới hạn độ sâu của dấu trang (Bookmarks), và chế độ đánh số tiêu đề tự động (CSS Counters) đều được khai báo tại đây. Điều này cho phép người dùng điều khiển toàn bộ nhà máy mà không cần chạm vào một dòng mã Python nào.
 
 ### 2. Chống Trôi dạt Mã hóa Luồng I/O (I/O Encoding Drift Defense)
 * **Ẩn dụ đời thực:** Tưởng tượng nhà máy của bạn nhận nguyên liệu từ nhiều quốc gia nhưng băng chuyền mặc định chỉ hiểu được tiếng Anh. Khi một kiện hàng ghi nhãn tiếng Việt đi qua, hệ thống đọc sai và nghiền nát kiện hàng đó.
@@ -42,7 +42,7 @@ MARKDOWN_TO_PDF_ENGINE/
 │   ├── __init__.py
 │   ├── ast_parser.py          # (Giai đoạn 1) Quét và phân rã văn bản thành Cây cú pháp.
 │   ├── html_renderer.py       # (Giai đoạn 2) Nhuộm màu mã nguồn và kết xuất thẻ HTML.
-│   └── pdf_compiler.py        # (Giai đoạn 3) Áp dụng Typography và đóng gói thành PDF.
+│   └── pdf_compiler.py        # (Giai đoạn 3) Áp dụng Typography, CSS Counters và PDF.
 │
 ├── tests/                     # [Sân Tập Trận] Khu vực diễn tập phòng chống lỗi.
 │   ├── __init__.py
@@ -57,24 +57,14 @@ MARKDOWN_TO_PDF_ENGINE/
 
 ### Phân tích Chi tiết Từng Thành phần:
 
-* **`config/settings.yaml`**: Trái tim cấu hình của dự án. Tệp này kiểm soát mọi thứ từ chuẩn mã hóa đa ngôn ngữ, định tuyến thư mục (`input`/`output`), giới hạn độ sâu cấp độ tiêu đề tối đa được ánh xạ thành Bookmark trong PDF (Cấp 1 đến Cấp 4), cho đến các thông số trang in vật lý (A4, lề 20mm) và bộ phông chữ phòng thủ chống lỗi hiển thị.
-
-
-* **`main.py`**: Đóng vai trò là động cơ điều phối quét hàng loạt và phân loại tài liệu tự động. Nó nạp tệp cấu hình, tự động kiểm tra và khởi tạo các thư mục đầu vào/đầu ra, lọc các tệp hợp lệ (đuôi `.md`, `.markdown`) và đẩy chúng qua băng tải chuyển đổi.
-
-
+* **`config/settings.yaml`**: Trái tim cấu hình của dự án. Tệp này kiểm soát mọi thứ từ chuẩn mã hóa đa ngôn ngữ, định tuyến thư mục (`input`/`output`), giới hạn độ sâu cấp độ tiêu đề tối đa được ánh xạ thành Bookmark trong PDF (Cấp 1 đến Cấp 4), cho đến các thông số trang in vật lý (A4, lề 20mm), bộ phông chữ phòng thủ chống lỗi hiển thị và cấu hình hệ thống nhảy số tiêu đề tự động (Numbering System).
+* **`main.py`**: Đóng vai trò là động cơ điều phối quét hàng loạt và phân loại tài liệu tự động. Nó nạp tệp cấu hình, trích xuất cấu hình hệ thống đánh số để truyền xuống cấp dưới, tự động kiểm tra và khởi tạo các thư mục đầu vào/đầu ra, lọc các tệp hợp lệ (đuôi `.md`, `.markdown`) và đẩy chúng qua băng tải chuyển đổi.
 * **`src/ast_parser.py`**: Module đảm nhiệm **Giai đoạn 1**. Sử dụng `markdown-it-py` để đọc tệp Markdown với chuẩn mã hóa được cưỡng chế, bóc tách tài liệu và xây dựng nên Cây cú pháp trừu tượng, đồng thời trực tiếp bắt các ngoại lệ `UnicodeDecodeError` nếu có luồng dữ liệu độc hại xâm nhập.
-
-
 * **`src/html_renderer.py`**: Module đảm nhiệm **Giai đoạn 2**. Tiếp nhận các Nút (Nodes) từ AST để bơm giao diện mã nguồn thông qua động cơ `Pygments` (tô màu cú pháp). Đặc biệt, module này can thiệp vào các thẻ tiêu đề (Heading), tự động chuyển đổi chuỗi văn bản tiếng Việt có dấu thành dạng Slug ASCII chuẩn hóa để tạo các điểm neo dữ liệu (Data Anchor) bằng thuộc tính `id`.
+* **`src/pdf_compiler.py`**: Module đảm nhiệm **Giai đoạn 3**. Kích hoạt thư viện `WeasyPrint` làm nhân lõi để hấp thụ mã HTML trung gian và bản đồ CSS Paged Media. Nó đọc toàn bộ các Mỏ neo Tiêu đề đã thiết lập và ra lệnh cho WeasyPrint kết xuất chúng thành bản đồ điều hướng tương tác bên lề PDF. Kể từ phiên bản v1.1.0, module này tự động sinh các quy tắc bộ đếm (CSS Counters) để đóng dấu số La Mã và số tự nhiên cho tiêu đề. Nó cũng bao gồm cơ chế triệt tiêu các cảnh báo nhiễu cấp hệ điều hành từ thư viện GLib/GIO/GTK3 trên Windows.
+* **`tests/red_team_tests.py`**: Bộ kiểm thử đối kháng Hộp Trắng, thực thi 6 kịch bản khắc nghiệt (như thử nghiệm mã hóa tiếng Việt lồng toán tử, bẫy đánh lừa tiêu đề nằm trong khối mã, tràn viền vật lý, xử lý thư mục rỗng, tái tạo thư mục con và cô lập lỗi tệp hỏng) nhằm chứng minh hệ thống không bao giờ bị sập đổ trước các dữ liệu sai lệch.
 
-
-* **`src/pdf_compiler.py`**: Module đảm nhiệm **Giai đoạn 3**. Kích hoạt thư viện `WeasyPrint` làm nhân lõi để hấp thụ mã HTML trung gian và bản đồ CSS Paged Media. Nó đọc toàn bộ các Mỏ neo Tiêu đề đã thiết lập và ra lệnh cho WeasyPrint kết xuất chúng thành bản đồ điều hướng tương tác bên lề PDF. Nó cũng bao gồm cơ chế triệt tiêu các cảnh báo nhiễu cấp hệ điều hành từ thư viện GLib/GIO/GTK3 trên Windows.
-
-
-* **`tests/red_team_tests.py`**: Bộ kiểm thử đối kháng Hộp Trắng, thực thi 6 kịch bản khắc nghiệt (như thử nghiệm mã hóa tiếng Việt lồng toán tử, bẫy đánh lừa tiêu đề nằm trong khối mã, tràn viền vật lý, xử lý thư mục rỗng, và cô lập lỗi tệp hỏng) nhằm chứng minh hệ thống không bao giờ bị sập đổ trước các dữ liệu sai lệch.
-
------
+---
 
 # 🛠️ HƯỚNG DẪN THIẾT LẬP MÔI TRƯỜNG VÀ KHỞI TẠO CẤU HÌNH (ENVIRONMENT SETUP & CONFIGURATION)
 
@@ -144,11 +134,8 @@ Tại cửa sổ Terminal, gõ lệnh sau và nhấn `Enter`:
 Tệp `requirements.txt` trong dự án khai báo danh sách các thư viện mã nguồn mở bắt buộc bao gồm:
 
 * **`markdown-it-py>=3.0.0`**: Động cơ bóc tách văn bản thô thành Cây cú pháp trừu tượng (AST).
-
 * **`pygments>=2.17.0`**: Động cơ phân tích cú pháp mã nguồn và nhuộm màu từ khóa (Syntax Highlighting).
-
 * **`weasyprint>=61.0`**: Động cơ chuyển đổi HTML/CSS Paged Media thành tệp PDF.
-
 * **`pyyaml>=6.0.1`**: Động cơ đọc và phân tích tệp cấu hình `settings.yaml`.
 
 Thực thi lệnh cài đặt hàng loạt bằng cách gõ lệnh sau vào Terminal:
@@ -164,7 +151,7 @@ pip install -r requirements.txt
 
 ## ⚙️ 3. SỔ TAY CẤU HÌNH TOÀN CỤC (`config/settings.yaml`)
 
-Thực hiện đúng triết lý **Phân tách Mối quan tâm (Separation of Concerns - SoC)**, toàn bộ tham số vận hành của hệ thống được tập trung duy nhất tại tệp `config/settings.yaml`. Tệp cấu hình này đóng vai trò là "Bảng Điều Khiển" của nhà máy, cho phép tùy chỉnh hành vi biên dịch mà không cần chỉnh sửa mã nguồn Python.
+Thực hiện đúng triết lý **Phân tách Mối quan tâm (Separation of Concerns - SoC)**, toàn bộ tham số vận hành của hệ thống được tập trung duy nhất tại tệp `config/settings.yaml`[cite: 4]. Tệp cấu hình này đóng vai trò là "Bảng Điều Khiển" của nhà máy, cho phép tùy chỉnh hành vi biên dịch mà không cần chỉnh sửa mã nguồn Python[cite: 4].
 
 ### Mã nguồn Cấu hình Mẫu Chuẩn mực cho `config/settings.yaml`:
 
@@ -253,6 +240,24 @@ typography_configuration:
   
   # Mã màu văn bản chuẩn (Tránh màu đen tuyệt đối gây mỏi mắt)
   text_color: "#1a1a1a"
+
+# 7. CẤU HÌNH ĐÁNH SỐ TIÊU ĐỀ TỰ ĐỘNG (HEADING NUMBERING CONFIGURATION)
+# Điều khiển tính năng tự động đếm và chèn ký tự số vào trước tiêu đề trong bản in PDF
+heading_numbering_system:
+  # Kích hoạt tính năng tự động đánh số tiêu đề (True: Bật, False: Tắt)
+  enable_auto_numbering: true
+  
+  # Định dạng đánh số cho tiêu đề Cấp 1 (H1)
+  # Giá trị chấp nhận: "roman" (Chữ số La Mã: I, II, III) hoặc "decimal" (Chữ số tự nhiên: 1, 2, 3)
+  h1_numbering_style: "roman"
+  
+  # Định dạng đánh số cho tiêu đề Cấp con (H2, H3, H4)
+  # Giá trị chấp nhận: "decimal" (Phân cấp tự nhiên: 1.1, 1.2, 1.1.1) hoặc "none" (Không đánh số cấp con)
+  sub_heading_numbering_style: "decimal"
+  
+  # Ký tự phân cách giữa chỉ số thứ tự và nội dung tiêu đề
+  number_separator: ". "
+
 ```
 
 ---
@@ -260,10 +265,16 @@ typography_configuration:
 ## 🔍 PHÂN TÍCH CHI TIẾT CÁC THAM SỐ CẤU HÌNH BẮT BUỘC
 
 1. **`global_encoding_standard: "utf-8"`**: Đóng vai trò là bức tường phòng thủ nguyên nhân gốc rễ gây ra lỗi mã hóa ký tự. Nó buộc toàn bộ các hàm mở tệp (`open()`) trong Python phải sử dụng chuẩn `utf-8` thay vì bảng mã mặc định `cp1252` của hệ điều hành Windows 11.
+
 2. **`directory_routing`**: Quản lý chiến lược định tuyến tài liệu. Tính năng `preserve_subfolder_structure: true` giúp người dùng quản lý tri thức dạng cây folder phức tạp (như Obsidian hay Zettelkasten) bên trong thư mục `input/` mà khi xuất sang `output/` không bị dồn tất cả file PDF ra một thư mục phẳng.
+
 3. **`syntax_highlighting_profile: "monokai"`**: Khai báo theme giao diện nhuộm màu khối mã. Bạn có thể thay đổi tham số này thành `"github-dark"`, `"dracula"`, hoặc `"solarized-light"` tùy theo sở thích thẩm mỹ.
+
 4. **`heading_retention_depth`**: Khóa độ sâu của cây Bookmark điều hướng trong file PDF. Bằng việc đặt `max_bookmark_level: 4`, hệ thống chỉ đưa các tiêu đề từ H1 đến H4 vào danh sách Dấu trang (Bookmarks Palette), giữ cho thanh điều hướng PDF gọn gàng, tránh bị rác bởi các tiêu đề quá nhỏ như H5 hay H6.
+
 5. **`typography_configuration`**: Danh sách phông chữ dự phòng (Font Stack). Chuỗi `"Segoe UI", "Arial", "Calibri", "Tahoma"` đảm bảo luôn có ít nhất một phông chữ hệ thống hỗ trợ trọn vẹn bảng mã tiếng Việt Unicode trên bất kỳ máy tính Windows nào, triệt tiêu hoàn toàn nguy cơ biến dạng ký tự hoặc lỗi ô vuông.
+
+6. **`heading_numbering_system` (Mới trong v1.1.0):** Điều khiển tính năng nhảy số tự động hoàn toàn bằng cơ chế CSS Counters của WeasyPrint mà không làm thay đổi văn bản Markdown gốc. Tham số `enable_auto_numbering: true` kích hoạt toàn bộ khối lệnh. Tham số `h1_numbering_style: "roman"` sẽ tự động chèn số La Mã (`I, II, III`) trước các thẻ `<h1>`. Tham số `sub_heading_numbering_style: "decimal"` tạo ra các chuỗi số phân cấp tự nhiên (`1.1`, `1.2`) nối tiếp từ tiêu đề cha xuống các thẻ `<h2>`, `<h3>`.
 
 ---
 
@@ -276,10 +287,15 @@ Tài liệu này cung cấp toàn bộ quy trình vận hành đường ống bi
 ## 🔄 1. QUY TRÌNH VẬN HÀNH ĐƯỜNG ỐNG BIÊN DỊCH (OPERATIONAL WORKFLOW)
 
 ### Ẩn dụ Ngữ nghĩa: "Băng chuyền Tự động hóa của Nhà máy"
+
 Hãy tưởng tượng tệp `main.py` đóng vai trò là **Quản Đốc Băng Chuyền**.
+
 * Bạn nạp nguyên liệu thô (các tệp `.md`) vào **Máng Đón Đầu Vào** (Thư mục `input/`).
+
 * Bạn gạt cầu giao khởi động băng chuyền (Thực thi lệnh `python main.py`).
+
 * Quản Đốc sẽ tự động phân loại tệp, kiểm tra tính hợp lệ, đẩy từng tệp qua các công đoạn chế tác (AST Parser -> HTML Renderer -> PDF Compiler) và đưa sản phẩm đóng gói sắc nét (tệp `.pdf`) vào **Kho Thành Phẩm** (Thư mục `output/`).
+
 
 ```text
 [Thư mục input/] ---> (Quét tệp .md) ---> [main.py: Quản đốc Điều phối]
@@ -292,6 +308,7 @@ Hãy tưởng tượng tệp `main.py` đóng vai trò là **Quản Đốc Băng
        └────────────────────────────────────────────┬──────────────────────────────────────────┘
                                                     ▼
                                     [Thư mục output/ (File .pdf)]
+
 ```
 
 ---
@@ -299,18 +316,27 @@ Hãy tưởng tượng tệp `main.py` đóng vai trò là **Quản Đốc Băng
 ### Quy trình Thao tác Chi tiết Từng bước trên VSCode:
 
 #### Bước 1: Chuẩn bị Văn bản Đầu vào (Input Preparation)
+
 1. Trong cửa sổ **Explorer** bên cánh trái của VSCode, tìm đến thư mục `input/` (Nếu chưa có, hệ thống sẽ tự động khởi tạo ở lần chạy đầu tiên).
+
 2. Sao chép hoặc tạo mới các tệp Markdown cần chuyển đổi vào trong thư mục `input/`.
+
 3. **Các định dạng đuôi tệp được hỗ trợ mặc định:** `.md`, `.markdown`, `.mdown` (Có thể tùy chỉnh trong `config/settings.yaml`).
 
 #### Bước 2: Thực thi Tiến trình Biên dịch Hàng loạt (Batch Execution)
+
 1. Mở cửa sổ **Terminal** trong VSCode bằng tổ hợp phím `Ctrl + ~` (Đảm bảo môi trường ảo `(venv)` đang được kích hoạt).
+
 2. Gõ câu lệnh thực thi sau và nhấn `Enter`:
-   ```powershell
-   python main.py
-   ```
+
+
+```powershell
+python main.py
+
+```
 
 #### Bước 3: Đọc Nhật ký Vận hành Terminal (Log Inspection)
+
 Khi lệnh được kích hoạt, hệ thống sẽ in ra màn hình nhật ký tiến trình thời gian thực (Real-time Console Logs):
 
 ```text
@@ -328,10 +354,13 @@ Khi lệnh được kích hoạt, hệ thống sẽ in ra màn hình nhật ký 
 - Biên dịch thất bại   : 0
 - Bỏ qua (Đã tồn tại)  : 0
 ========================================================================
+
 ```
 
 #### Bước 4: Kiểm tra Sản phẩm Đầu ra
+
 1. Truy cập thư mục `output/` trên cây thư mục VSCode.
+
 2. Nhấp chuột phải vào tệp `.pdf` vừa xuất bản và chọn **Reveal in File Explorer** để mở và kiểm tra chất lượng hiển thị, bản đồ Bookmark và màu sắc mã nguồn.
 
 ---
@@ -341,15 +370,21 @@ Khi lệnh được kích hoạt, hệ thống sẽ in ra màn hình nhật ký 
 Hệ thống được trang bị các tính năng tự bảo tồn không gian lưu trữ và duy trì cấu trúc dữ liệu nguyên vẹn:
 
 ### 1. Tự động Khởi tạo Hạ tầng Thư mục (`auto_create_directories`)
+
 * Nếu người dùng lần đầu tải mã nguồn về và chưa tạo hai thư mục `input/` và `output/`, hàm `ensure_directories_exist()` trong `main.py` sẽ phát hiện sự thiếu hụt này.
+
 * Hệ thống sẽ tự động kích hoạt lệnh tạo thư mục an toàn (`mkdir(parents=True, exist_ok=True)`) mà không gây ra bất kỳ lỗi dừng chương trình nào.
 
 ### 2. Tái tạo và Bảo tồn Cấu trúc Thư mục Con (`preserve_subfolder_structure`)
+
 * **Thách thức:** Khi người dùng lưu trữ ghi chú dạng cây phân tầng phức tạp (Ví dụ: `input/du_an_a/chuyen_de_1/bao_cao.md`), nhiều công cụ chuyển đổi thô sẽ dồn tất cả các file PDF ra một thư mục phẳng `output/bao_cao.pdf`, làm mất hoàn toàn bối cảnh phân loại.
-* **Giải pháp:** Trong `main.py`, hệ thống tính toán đường dẫn tương đối (`relative_to(input_dir)`).[cite: 3] Khi tính năng `preserve_subfolder_structure: true` được bật trong `settings.yaml`, hệ thống sẽ tự động dựng lại cây thư mục con tương ứng bên phía `output/` (Ví dụ: `output/du_an_a/chuyen_de_1/bao_cao.pdf`).
+
+* **Giải pháp:** Trong `main.py`, hệ thống tính toán đường dẫn tương đối (`relative_to(input_dir)`). Khi tính năng `preserve_subfolder_structure: true` được bật trong `settings.yaml`, hệ thống sẽ tự động dựng lại cây thư mục con tương ứng bên phía `output/` (Ví dụ: `output/du_an_a/chuyen_de_1/bao_cao.pdf`).
 
 ### 3. Kiểm soát Chế độ Ghi đè Tệp Thành phẩm (`overwrite_existing`)
+
 * Khi `overwrite_existing: true`, hệ thống sẽ ghi đè tệp PDF mới lên tệp PDF cũ để luôn cập nhật nội dung mới nhất.
+
 * Khi `overwrite_existing: false`, hệ thống sẽ kiểm tra `target_output_pdf_path.exists()`. Nếu tệp PDF đã tồn tại, nó sẽ tự động bỏ qua (`skipped_count += 1`) để tiết kiệm tài nguyên tính toán và bảo vệ tài liệu đã biên dịch trước đó.
 
 ---
@@ -357,13 +392,15 @@ Hệ thống được trang bị các tính năng tự bảo tồn không gian l
 ## ⚡ 3. CƠ CHẾ PHÒNG THỦ VÀ CÔ LẬP NGOẠI LỆ (FAULT ISOLATION)
 
 ### Ẩn dụ Ngữ nghĩa: "Aptomat (Cầu Dao Tự Động) Phân Lưới"
-Trong một tòa nhà, nếu bóng đèn ở phòng khách bị chập điện, cầu dao riêng của phòng khách sẽ ngắt. Điện ở phòng bếp và phòng ngủ vẫn sáng bình thường. 
+
+Trong một tòa nhà, nếu bóng đèn ở phòng khách bị chập điện, cầu dao riêng của phòng khách sẽ ngắt. Điện ở phòng bếp và phòng ngủ vẫn sáng bình thường.
 Trong `markdown_to_pdf_engine`, nếu bạn đưa vào 10 tệp Markdown nhưng có 1 tệp bị hỏng (chứa mã nhị phân rác hoặc sai mã hóa), **Cầu Dao Cô Lập** `execute_single_file_pipeline` sẽ lập tức bẫy lỗi, đánh dấu tệp đó thất bại, và tiếp tục biên dịch 9 tệp còn lại một cách bình thường.
 
 ```text
 [Bắt đầu Batch] ───> Tệp 1 (.md) ───> Biên dịch ───> [THÀNH CÔNG] (Xuất PDF 1)
                  ───> Tệp 2 (Hỏng) ───> Bẫy Ngoại Lệ ───> [THẤT BẠI] (Bỏ qua & Báo lỗi Log)
                  ───> Tệp 3 (.md) ───> Biên dịch ───> [THÀNH CÔNG] (Xuất PDF 3)
+
 ```
 
 ---
@@ -371,6 +408,7 @@ Trong `markdown_to_pdf_engine`, nếu bạn đưa vào 10 tệp Markdown nhưng 
 ### Phân tích Chi tiết Các Tầng Bẫy Lỗi Trong Mã Nguồn:
 
 #### Tầng 1: Cô lập Lỗi Đơn tệp (Single File Exception Containment)
+
 Trong tệp `main.py`, toàn bộ tiến trình biên dịch từng tệp được bọc trong hàm `execute_single_file_pipeline()` với khối `try...except` phòng thủ diện rộng:
 
 ```python
@@ -388,32 +426,45 @@ except (
 ) as error:
     print(f"    -> [THẤT_BẠI_TỆP] Bỏ qua tệp {input_md_path.name} do xuất hiện lỗi: {error}")
     return False
+
 ```
 
 * **Chức năng:** Chỉ định đích danh các ngoại lệ I/O, mã hóa và runtime. Khi phát hiện tệp lỗi, nó ghi nhận vào nhật ký Terminal và trả về `False`, giúp vòng lặp `for` trong `batch_process_directory()` chuyển sang tệp kế tiếp mà không làm sập tiến trình chung.
 
 #### Tầng 2: Phòng thủ Sự cố Trôi dạt Mã hóa Unicode (`UnicodeDecodeError`)
+
 * **Sự cố:** Hệ điều hành Windows 11 mặc định mở tệp bằng bảng mã `cp1252`. Nếu gặp ký tự tiếng Việt Unicode hoặc ký tự đặc biệt, chương trình Python thông thường sẽ bị ngắt đột ngột.
+
 * **Giải pháp phòng thủ:** Trong `src/ast_parser.py` và `main.py`, mọi thao tác mở tệp `open()` đều bắt buộc phải truyền tham số `encoding="utf-8"`. Đồng thời, `ASTParser` bắt riêng `UnicodeDecodeError` và đóng gói lại thành thông điệp lỗi rõ ràng cho người dùng.
 
 #### Tầng 3: Xử lý An toàn Thư mục Rỗng (Empty Input Directory Handling)
-* Khi thư mục `input/` không chứa tệp `.md` nào, hệ thống không ném ra lỗi ngắt tiến trình.[cite: 3, 9] 
+
+* Khi thư mục `input/` không chứa tệp `.md` nào, hệ thống không ném ra lỗi ngắt tiến trình.
+
 * `main.py` kiểm tra `if not target_files:`, in ra thông báo hướng dẫn người dùng chép tệp vào thư mục và kết thúc tiến trình một cách êm đẹp (Exit Code 0).
 
 #### Tầng 4: Triệt tiêu Cảnh báo Nhiễu C-Runtime của GTK3 trên Windows
-* **Sự cố:** Khi `WeasyPrint` gọi thư viện C gốc `GLib/GIO` trên Windows 11, hệ thống thường đẩy các cảnh báo nhiễu dạng `GLib-GIO-WARNING` ra luồng xuất lỗi Terminal (`stderr`).
-* **Giải pháp phòng thủ:** Trong `src/pdf_compiler.py`, hệ thống tự động đăng ký đường dẫn DLL của GTK3 (`_register_gtk_dll_directories`) và thiết lập các biến môi trường dập tắt log nhiễu trước khi nạp thư viện `WeasyPrint`:
-  ```python
-  os.environ["G_MESSAGES_DEBUG"] = "none"
-  os.environ["GLIB_LOG_LEVEL"] = "4"
-  ```
-  Việc này giữ cho nhật ký giao diện Terminal của người dùng luôn sạch sẽ, dễ quan sát.
 
------
+* **Sự cố:** Khi `WeasyPrint` gọi thư viện C gốc `GLib/GIO` trên Windows 11, hệ thống thường đẩy các cảnh báo nhiễu dạng `GLib-GIO-WARNING` ra luồng xuất lỗi Terminal (`stderr`).
+
+
+* **Giải pháp phòng thủ:** Trong `src/pdf_compiler.py`, hệ thống tự động đăng ký đường dẫn DLL của GTK3 (`_register_gtk_dll_directories`) và thiết lập các biến môi trường dập tắt log nhiễu trước khi nạp thư viện `WeasyPrint`:
+
+
+```python
+os.environ["G_MESSAGES_DEBUG"] = "none"
+os.environ["GLIB_LOG_LEVEL"] = "4"
+
+```
+
+
+Việc này giữ cho nhật ký giao diện Terminal của người dùng luôn sạch sẽ, dễ quan sát.
+
+---
 
 # 🧪 BỘ KIỂM THỬ ĐỐI KHÁNG (RED-TEAM TESTING) VÀ QUẢN LÝ MÃ NGUỒN (VERSION CONTROL)
 
-Tài liệu này chi tiết hóa toàn bộ kịch bản kiểm thử hộp trắng (White-Box Red-Teaming) nhằm thử thách độ bền vững của hệ thống `markdown_to_pdf_engine`, cùng hướng dẫn thiết lập tệp loại trừ `.gitignore` và quy trình quản lý mã nguồn bằng Git/GitHub trên VSCode.[cite: 3]
+Tài liệu này chi tiết hóa toàn bộ kịch bản kiểm thử hộp trắng (White-Box Red-Teaming) nhằm thử thách độ bền vững của hệ thống `markdown_to_pdf_engine`, cùng hướng dẫn thiết lập tệp loại trừ `.gitignore` và quy trình quản lý mã nguồn bằng Git/GitHub trên VSCode.
 
 ---
 
@@ -421,7 +472,7 @@ Tài liệu này chi tiết hóa toàn bộ kịch bản kiểm thử hộp tr�
 
 ### Ẩn dụ Ngữ nghĩa: "Phòng Thử Nghiệm Va Chạm Ô Tô (Crash Test Lab)"
 Trong ngành sản xuất ô tô, trước khi một chiếc xe được phép lăn bánh ra thị trường, nhà sản xuất phải đưa nó vào phòng thử nghiệm va chạm: cho xe đâm vào tường bê tông, thử nghiệm trong bão tuyết, hay cho chạy trên đường ngập nước. 
-Tệp `tests/red_team_tests.py` đóng vai trò là **Phòng Thử Nghiệm Va Chạm** của hệ thống.[cite: 3] Nó tạo ra các dữ liệu "độc hại" và khắc nghiệt nhất nhằm mục đích cố tình làm sập hệ thống, qua đó chứng minh rằng các cơ chế phòng thủ đã vận hành hoàn hảo.[cite: 3]
+Tệp `tests/red_team_tests.py` đóng vai trò là **Phòng Thử Nghiệm Va Chạm** của hệ thống. Nó tạo ra các dữ liệu "độc hại" và khắc nghiệt nhất nhằm mục đích cố tình làm sập hệ thống, qua đó chứng minh rằng các cơ chế phòng thủ đã vận hành hoàn hảo.
 
 ---
 
@@ -447,45 +498,37 @@ Tệp `tests/red_team_tests.py` đóng vai trò là **Phòng Thử Nghiệm Va C
 #### Kịch bản 1: Rào chắn Xung đột Ký tự Đa ngôn ngữ (`test_scenario_1_bilingual_encoding_stress_test`)
 
 * **Mục tiêu đối kháng:** Tiêm một khối dữ liệu phức tạp chứa văn bản Tiếng Việt có dấu (`# Thử nghiệm Mã hóa Tiếng Việt...`) lồng ghép trực tiếp với các biểu thức logic (`a < b && c > d`) và ký tự điều khiển biểu thức chính quy (`^[a-zA-Z0-9_]+$`).
-
 * **Phương pháp kiểm tra:** Ép `ASTParser` nạp tệp và kiểm tra `HTMLRenderer` có giữ nguyên văn bản Tiếng Việt mà không biến dạng ký tự hay ném ra ngoại lệ `UnicodeDecodeError`.
-
 * **Kết quả kỳ vọng:** Bộ phân tích AST giữ nguyên 100% hình thái văn bản Tiếng Việt và render thành công các thẻ HTML trung gian.
 
 #### Kịch bản 2: Bẫy Đánh lừa Cấu trúc Phân cấp (`test_scenario_2_heading_spoofing_simulation`)
 
-* **Mục tiêu đối kháng:** Cố tình đưa chuỗi định dạng tiêu đề giả mạo (Ví dụ: `## Tiêu đề Giả mạo Cấp 2 Trong Code Block`) nằm chìm bên trong một khối mã nguồn (````python ... ````).
-
+* **Mục tiêu đối kháng:** Cố tình đưa chuỗi định dạng tiêu đề giả mạo (Ví dụ: `## Tiêu đề Giả mạo Cấp 2 Trong Code Block`) nằm chìm bên trong một khối mã nguồn (`python ... `).
 * **Phương pháp kiểm tra:** Quét mã HTML trung gian để xác nhận tiêu đề thật (`# Tiêu đề Hợp lệ Cấp 1`) được chuyển thành `<h1 id="tieu-de-hop-le-cap-1" data-level="1">`, còn tiêu đề giả mạo nằm trong khối mã KHÔNG bao giờ được tạo thẻ `<h2>` hay gắn thuộc tính `data-level="2"`.
 * **Kết quả kỳ vọng:** Động cơ `markdown-it-py` cô lập hoàn toàn khối mã nguồn `fence`, triệt tiêu nguy cơ rác bản đồ Dấu trang (Bookmarks) trong PDF.
 
 #### Kịch bản 3: Thử nghiệm Tràn Viền Vật lý (`test_scenario_3_physical_overflow_destructive_test`)
 
 * **Mục tiêu đối kháng:** Ép hệ thống xử lý một chuỗi mã nguồn liên tục gồm 1.500 ký tự `X` không có khoảng trắng, vượt gấp nhiều lần độ rộng trang A4.
-
 * **Phương pháp kiểm tra:** Đẩy dữ liệu qua `PDFCompiler` để kiểm tra khả năng biên dịch vật lý.
 * **Kết quả kỳ vọng:** Lớp CSS Paged Media với thuộc tính `word-break: break-all` phản ứng thành công, tự động bẻ gãy chuỗi xuống dòng mà không làm sập tiến trình in ấn của `WeasyPrint`.
 
 #### Kịch bản 4: Xử lý Thư mục Đầu vào Rỗng (`test_scenario_4_empty_directory_handling`)
 
 * **Mục tiêu đối kháng:** Kích hoạt tiến trình quét hàng loạt `batch_process_directory()` khi thư mục `input/` không chứa bất kỳ tệp Markdown nào.
-
 * **Phương pháp kiểm tra:** Bẫy toàn bộ các ngoại lệ `FileNotFoundError`, `ValueError`, `TypeError`, `OSError`, `RuntimeError`.
-
 * **Kết quả kỳ vọng:** Chương trình hiển thị thông báo hướng dẫn nhẹ nhàng và kết thúc an toàn mà không ném ra ngoại lệ dừng đột ngột.
 
 #### Kịch bản 5: Cô lập Tệp Hỏng Nhị phân (`test_scenario_5_batch_fault_isolation`)
 
 * **Mục tiêu đối kháng:** Tạo một thư mục thử nghiệm chứa 3 tệp: Tệp A (Hợp lệ), Tệp B (Tệp hỏng chứa chuỗi byte nhị phân không hợp lệ `\x80\x81\xfe\xff\xff` gây lỗi mã hóa UTF-8), và Tệp C (Hợp lệ).
 * **Phương pháp kiểm tra:** Chạy kịch bản qua `execute_single_file_pipeline()`.
-
 * **Kết quả kỳ vọng:** Tệp A và C trả về `True` và xuất hiện trong `output/`. Tệp B bị bẫy lỗi, trả về `False`, không sinh ra PDF nhưng không làm ngắt tiến trình biên dịch của A và C.
 
 #### Kịch bản 6: Tái tạo Cấu trúc Thư mục Con (`test_scenario_6_subfolder_structure_preservation`)
 
 * **Mục tiêu đối kháng:** Tạo cấu trúc thư mục phân tầng nhiều cấp: `input/du_an_nghien_cuu/chuyen_de_1/bao_cao.md`.
 * **Phương pháp kiểm tra:** Thực thi tiến trình quét hàng loạt `batch_process_directory()`.
-
 * **Kết quả kỳ vọng:** Hệ thống tự động tái tạo đúng cây thư mục con bên phía `output/` và xuất bản tệp tại: `output/du_an_nghien_cuu/chuyen_de_1/bao_cao.pdf`.
 
 ---
@@ -493,14 +536,11 @@ Tệp `tests/red_team_tests.py` đóng vai trò là **Phòng Thử Nghiệm Va C
 ### Quy trình Thực thi Kiểm thử Trực tiếp trên VSCode Terminal:
 
 1. Mở Cửa sổ Terminal trong VSCode (`Ctrl + ~`) và đảm bảo môi trường ảo `(venv)` đang bật.
-
-
 2. Thực thi lệnh chạy toàn bộ suite kiểm thử Red-Team bằng module `unittest` của Python:
 ```powershell
 python -m unittest tests/red_team_tests.py
 
 ```
-
 
 3. **Đọc kết quả kiểm thử trên màn hình:**
 * Nếu tất cả 6 kịch bản đều vượt qua, Terminal sẽ hiển thị:
@@ -514,6 +554,7 @@ OK
 ```
 
 * Ký tự `.` đại diện cho 1 bài test chạy thành công. Chuỗi `OK` khẳng định hệ thống đạt độ bền vững 100%.
+
 
 ---
 
@@ -558,6 +599,26 @@ temp_redteam_workspace/
 Thumbs.db
 Desktop.ini
 
+# 5. TỆP TRUNG GIAN DỤNG CỤ BIÊN DỊCH (RENDER & AST INTERMEDIATE ARTIFACTS)
+*.html
+*.css.tmp
+temp/
+build/
+dist/
+
+# 6. NHẬT KÝ VẬN HÀNH VÀ BÁO CÁO KIỂM THỬ (RED-TEAM LOGS & STRESS TEST)
+*.log
+logs/
+redteam_reports/
+*.stacktrace
+
+# 7. CẤU HÌNH LOCAL VÀ DỮ LIỆU THỬ NGHIỆM CÁ NHÂN (LOCAL CONFIG & TEST INPUTS)
+.env
+config.local.yaml
+input/*
+!input/input_sample.md
+!input/.gitkeep
+
 ```
 
 ---
@@ -585,7 +646,7 @@ git add .
 #### Bước 3: Tạo Điểm Lưu trữ Phiên bản (Commit)
 
 ```powershell
-git commit -m "feat: Hoàn thiện lõi động cơ markdown_to_pdf_engine v1.0.0 đạt chuẩn Red-Team"
+git commit -m "docs & feat: Nâng cấp README.md lên v1.1.0 và hoàn thiện tính năng đánh số tiêu đề CSS Counters"
 
 ```
 
@@ -605,10 +666,16 @@ git push -u origin main
 
 ## 📜 3. LỊCH SỬ PHIÊN BẢN (CHANGELOG & VERSION HISTORY)
 
-### Phiên bản 1.0.0 (Hiện tại)
+### Phiên bản 1.1.0 (Bản Nâng Cấp Hiện Tại)
 
-* **Kiến trúc Lõi:** Hoàn thiện pipeline 3 giai đoạn: `ASTParser` (`markdown-it-py`) -> `HTMLRenderer` (`Pygments`) -> `PDFCompiler` (`WeasyPrint`).
+* **Tính năng mới (Feat):** Tích hợp hệ thống đóng dấu số tiêu đề tự động bằng động cơ **CSS Counters** nguyên bản của WeasyPrint. Hỗ trợ xuất số La Mã (`I, II, III`) cho thẻ H1 và số tự nhiên phân cấp đa tầng (`1.1`, `1.2.1`) cho thẻ H2 đến H4 mà không làm thay đổi tệp Markdown gốc.
+* **Cấu hình (Config):** Bổ sung mục `heading_numbering_system` vào `config/settings.yaml` cho phép người dùng toàn quyền bật/tắt và chọn phong cách hiển thị.
+* **Kiến trúc (Arch):** Mở rộng Trạm trung chuyển `main.py` để bóc tách an toàn cấu hình nhảy số và truyền qua phương thức khởi tạo của `PDFCompiler`.
+* **Phòng thủ (Test):** Cập nhật toàn diện mô hình biến môi trường giả lập (`self.test_config_content`) trong `tests/red_team_tests.py` để bảo chứng 6 kịch bản đối kháng không bị sập (`KeyError`) khi tiếp nhận module cấu hình mới.
 
-* **Bảo mật & Chống lỗi:** Tích hợp bộ cô lập luồng `C-Runtime Stderr` trên Windows 11, cưỡng chế mã hóa UTF-8 toàn cục, và hoàn tất 100% bài test trong Red-Team Suite.
+### Phiên bản 1.0.0 (Bản Khởi Tạo)
 
-* **Cấu hình Tách biệt:** Điều khiển toàn bộ hệ thống thông qua tệp YAML chuẩn SoC (`config/settings.yaml`).
+* **Kiến trúc Lõi:** Hoàn thiện pipeline 3 giai đoạn ngoại tuyến (Offline-first): `ASTParser` (`markdown-it-py`) -> `HTMLRenderer` (`Pygments`) -> `PDFCompiler` (`WeasyPrint`).
+* **Bảo mật & Chống lỗi:** Thiết lập 4 tầng Aptomat phân lưới: Cô lập luồng `C-Runtime Stderr` trên Windows 11, cưỡng chế mã hóa đa ngôn ngữ UTF-8 toàn cục, xử lý an toàn thư mục rỗng và cô lập tệp hỏng nhị phân.
+* **Kiểm thử (Test):** Hoàn tất 100% tỷ lệ pass cho 6 kịch bản trong Red-Team Suite.
+* **Cấu hình Tách biệt:** Điều khiển toàn bộ hệ thống thông qua tệp YAML chuẩn Separation of Concerns (`config/settings.yaml`).

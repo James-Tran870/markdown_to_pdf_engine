@@ -26,7 +26,7 @@ class RedTeamTestSuite(unittest.TestCase):
         self.config_dir = self.temp_dir / "config"
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        # Khởi tạo tệp cấu hình tạm thời cho bộ test
+        # Khởi tạo tệp cấu hình tạm thời cho bộ test (Đã bổ sung cấu hình đánh số tiêu đề)
         self.test_config_path = self.config_dir / "settings.yaml"
         self.test_config_content = """
 global_encoding_standard: "utf-8"
@@ -53,6 +53,11 @@ typography_configuration:
   base_font_size: "11pt"
   line_height: "1.6"
   text_color: "#1a1a1a"
+heading_numbering_system:
+  enable_auto_numbering: true
+  h1_numbering_style: "roman"
+  sub_heading_numbering_style: "decimal"
+  number_separator: ". "
 """
         with open(self.test_config_path, "w", encoding="utf-8") as file_stream:
             file_stream.write(self.test_config_content)
