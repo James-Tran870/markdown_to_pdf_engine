@@ -191,6 +191,54 @@ class PDFCompiler:
             border-radius: 4px;
             margin-bottom: 1em;
         }}
+
+        /* ================================================================== */
+        /* LỚP GIÁP CSS PHÒNG THỦ: TOÁN HỌC (DEFENSIVE MATHML STYLING)        */
+        /* ================================================================== */
+        
+        /* Cưỡng chế neo chặt đáy công thức toán học vào đường cơ sở của văn bản */
+        .math-inline {{
+            display: inline-block;
+            vertical-align: baseline;
+            margin: 0 0.1em;
+        }}
+
+        /* Định dạng hiển thị độc lập cho khối công thức toán lớn */
+        .math-block {{
+            display: block;
+            text-align: center;
+            margin: 1.2em 0;
+            page-break-inside: avoid;
+        }}
+
+        /* 1. Kìm hãm kích thước khối toán học đồng nhất với văn bản xung quanh */
+        math {{
+            font-family: "Cambria Math", "Latin Modern Math", "STIX Two Math", serif;
+            font-size: 0.95em; 
+        }}
+
+        /* 2. Ép buộc nâng cao hệ số mũ và hạ thấp cơ số dưới bằng CSS thuần */
+        /* Cơ chế này triệt tiêu hoàn toàn lỗi hiển thị 230 nếu GTK3 hỏng */
+        msup > *:nth-child(2) {{
+            vertical-align: super;
+            font-size: 0.75em;
+        }}
+
+        msub > *:nth-child(2) {{
+            vertical-align: sub;
+            font-size: 0.75em;
+        }}
+
+        /* Khung cảnh báo màu đỏ dành riêng cho các đoạn công thức hỏng */
+        .math-error, .math-raw {{
+            font-family: "Consolas", "Courier New", monospace;
+            color: #c93b2b;
+            background-color: #f8f9fa;
+            border: 1px solid #eaecf0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }}
         """
 
         full_document = f"""<!DOCTYPE html>

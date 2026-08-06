@@ -1,3 +1,9 @@
+# ==============================================================================
+# KỊCH BẢN ĐIỀU PHỐI VẬN HÀNH HÀNG LOẠT (MAIN PIPELINE COORDINATOR)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0 - Tích hợp MathML)
+# Kiến trúc: Defensive Programming & Separation of Concerns (SoC)
+# ==============================================================================
+
 import sys
 from pathlib import Path
 
@@ -57,34 +63,42 @@ def execute_single_file_pipeline(
 ) -> bool:
     """Biên dịch một tệp Markdown duy nhất sang PDF với cơ chế cô lập ngoại lệ cụ thể."""
     try:
-        # Trích xuất các tham số cấu hình cơ bản
+        # 1. Trích xuất các tham số cấu hình cơ bản từ YAML
         encoding_standard = config.get("global_encoding_standard", "utf-8")
         theme_profile = config.get("syntax_highlighting_profile", "monokai")
         heading_config = config.get("heading_retention_depth", {})
         max_bookmark_level = heading_config.get("max_bookmark_level", 4)
-
-        # MỞ RỘNG BĂNG CHUYỀN: Trích xuất khối cấu hình đánh số tiêu đề tự động
         numbering_config = config.get("heading_numbering_system", {})
 
-        # 1. Khởi tạo và nạp tệp qua bộ phân tích Cây Cú Pháp Trừu Tượng (AST)
-        parser = ASTParser(encoding_standard=encoding_standard)
+        # MỞ RỘNG v1.2.0: Trích xuất khối cấu hình động cơ dịch thuật toán học
+        math_config = config.get("math_rendering_system", {})
+        enable_math = math_config.get("enable_math_rendering", True)
+        fallback_to_raw = math_config.get("fallback_to_raw_on_error", True)
+
+        # 2. Khởi tạo và nạp tệp qua bộ phân tích AST (Truyền cờ enable_math)
+        parser = ASTParser(
+            encoding_standard=encoding_standard,
+            enable_math=enable_math,
+        )
         _ast_tokens = parser.parse_markdown_file(input_md_path)
 
-        # 2. Đọc nội dung văn bản thô theo chuẩn UTF-8 cưỡng chế
+        # 3. Đọc nội dung văn bản thô theo chuẩn UTF-8 cưỡng chế
         with open(input_md_path, "r", encoding=encoding_standard) as file_stream:
             markdown_text = file_stream.read()
 
-        # 3. Kết xuất mã HTML ngữ nghĩa kèm Stylesheet Pygments CSS
+        # 4. Kết xuất mã HTML ngữ nghĩa (Truyền cờ enable_math và fallback_to_raw)
         renderer = HTMLRenderer(
-            theme_name=theme_profile, max_bookmark_level=max_bookmark_level
+            theme_name=theme_profile,
+            max_bookmark_level=max_bookmark_level,
+            enable_math=enable_math,
+            fallback_to_raw=fallback_to_raw,
         )
         pygments_css, rendered_html = renderer.convert_to_html(markdown_text)
 
-        # 4. Đảm bảo thư mục cha của tệp đầu ra đã được tạo trước khi xuất bản
+        # 5. Đảm bảo thư mục cha của tệp đầu ra đã được tạo
         output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 5. Biên dịch Paged Media CSS và xuất tệp PDF hoàn chỉnh
-        # Truyền bổ sung numbering_config vào động cơ PDFCompiler
+        # 6. Biên dịch Paged Media CSS và xuất tệp PDF hoàn chỉnh
         compiler = PDFCompiler(
             output_encoding=encoding_standard,
             numbering_config=numbering_config,
@@ -112,7 +126,7 @@ def execute_single_file_pipeline(
 
 def batch_process_directory(base_directory: Path) -> None:
     """Động cơ điều phối quét hàng loạt và phân loại tài liệu tự động."""
-    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (BATCH PROCESSING) ===")
+    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (BATCH PROCESSING v1.2.0) ===")
 
     # 1. Nạp tệp cấu hình hệ thống
     config_path = base_directory / "config" / "settings.yaml"
@@ -169,7 +183,6 @@ def batch_process_directory(base_directory: Path) -> None:
 
     # 4. Duyệt qua từng tệp để đẩy qua băng tải chuyển đổi
     for index, input_file_path in enumerate(target_files, start=1):
-        # Tái tạo cấu trúc thư mục con nếu tính năng preserve_subfolder_structure bật
         if preserve_subfolder:
             relative_path = input_file_path.relative_to(input_dir)
             target_output_pdf_path = (output_dir / relative_path).with_suffix(".pdf")
@@ -182,7 +195,6 @@ def batch_process_directory(base_directory: Path) -> None:
             f"[{index}/{len(target_files)}] Đang xử lý: {input_file_path.relative_to(base_directory)}"
         )
 
-        # Kiểm tra điều kiện ghi đè tệp thành phẩm
         if target_output_pdf_path.exists() and not overwrite_existing:
             print(
                 "    -> [BỎ_QUA] Tệp PDF thành phẩm đã tồn tại và chế độ ghi đè bị tắt."
@@ -190,7 +202,6 @@ def batch_process_directory(base_directory: Path) -> None:
             skipped_count += 1
             continue
 
-        # Kích hoạt biên dịch đơn tệp
         is_successful = execute_single_file_pipeline(
             input_md_path=input_file_path,
             output_pdf_path=target_output_pdf_path,

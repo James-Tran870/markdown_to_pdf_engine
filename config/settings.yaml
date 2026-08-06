@@ -1,6 +1,6 @@
 # ==============================================================================
 # BẢNG ĐIỀU KHUYỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
-# Dự án: markdown_to_pdf_engine
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0 - Tích hợp MathML)
 # Kiến trúc: Separation of Concerns (SoC) - Configuration Layer
 # ==============================================================================
 
@@ -99,3 +99,12 @@ heading_numbering_system:
   
   # Ký tự phân cách giữa chỉ số thứ tự và nội dung tiêu đề
   number_separator: ". "
+
+# 8. CẤU HÌNH ĐỘNG CƠ DỊCH THUẬT TOÁN HỌC (MATH RENDERING SYSTEM - NEW v1.2.0)
+# Điều khiển tính năng nhận diện và chuyển đổi công thức LaTeX sang MathML/SVG
+math_rendering_system:
+  # Cờ bật/tắt chính cho toàn bộ luồng xử lý toán học (True: Bật, False: Tắt)
+  enable_math_rendering: true
+  
+  # Chế độ tự động hạ cấp an toàn: Nếu chuỗi LaTeX bị lỗi cú pháp, trả về văn bản gốc thay vì làm sập chương trình
+  fallback_to_raw_on_error: true
