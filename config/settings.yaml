@@ -1,143 +1,123 @@
 # ==============================================================================
 # BẢNG ĐIỀU KHUYỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.2 - Academic & Table Engine)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.0 - Playwright & KaTeX Engine)
 # Kiến trúc: Separation of Concerns (SoC) - Configuration Layer
 # ==============================================================================
 
 # 1. CHUẨN MÃ HÓA TOÀN CỤC (GLOBAL ENCODING STANDARD)
 # Cưỡng chế luồng Đọc (Read), Ghi (Write) và Render theo UTF-8
-# Triệt tiêu hoàn toàn sự cố trôi dạt mã hóa cp1252 trên Windows 11
 global_encoding_standard: "utf-8"
 
 # 2. ĐIỀU HƯỚNG THƯ MỤC VÀ XỬ LÝ HÀNG LOẠT (DIRECTORY ROUTING & BATCH PROCESSING)
-# Cấu hình dây chuyền tự động quét và phân loại tài liệu đầu vào/đầu ra
 directory_routing:
-  # Tên thư mục chứa các tệp Markdown cần chuyển đổi
   input_directory: "input"
-  
-  # Tên thư mục chứa các tệp PDF thành phẩm sau biên dịch
   output_directory: "output"
-  
-  # Kích hoạt quét đệ quy (Recursive Search) vào tất cả các thư mục con bên trong input/
   recursive_search: true
-  
-  # Danh sách các đuôi tệp văn bản được phép nạp vào đường ống xử lý
   allowed_extensions:
     - ".md"
     - ".markdown"
     - ".mdown"
-  
-  # Cho phép tự động ghi đè tệp PDF thành phẩm nếu đã tồn tại bên thư mục output/
   overwrite_existing: true
-  
-  # Tự động kiểm tra và khởi tạo thư mục input/ và output/ nếu chưa tồn tại
   auto_create_directories: true
-  
-  # Bảo tồn nguyên vẹn cấu trúc thư mục con từ input/ sang output/
-  # Ví dụ: input/du_an_a/baocao.md -> output/du_an_a/baocao.pdf
   preserve_subfolder_structure: true
 
 # 3. NHUỘM MÀU CÚ PHÁP MÃ NGUỒN (SYNTAX HIGHLIGHTING PROFILE)
-# Định danh chủ đề (Theme) Pygments dùng để tô màu từ khóa, biến và hàm trong Code Block
 syntax_highlighting_profile: "monokai"
 
 # 4. GIỚI HẠN ĐỘ SÂU DẤU TRANG TIÊU ĐỀ (HEADING RETENTION & ANCHORS)
-# Quy định ranh giới phân cấp cấu hình Dấu trang (Bookmarks) và Mỏ neo HTML
 heading_retention_depth:
-  # Cấp độ tiêu đề tối đa được ánh xạ thành Bookmark trong PDF (Cấp 1 đến Cấp 4)
   max_bookmark_level: 4
-  
-  # Kích hoạt tự động gắn thuộc tính id mỏ neo vào các thẻ tiêu đề HTML
   enable_heading_anchors: true
-  
-  # Cưỡng chế chuẩn hóa chuỗi id tiêu đề về dạng ASCII không dấu chuẩn SEO/HTML
   normalize_anchor_ascii: true
 
 # 5. THÔNG SỐ TRANG IN VẬT LÝ (DOCUMENT LAYOUT CONFIGURATION)
-# Cấu hình kích thước trang in, lề văn bản và cơ chế xử lý khối mã tràn viền
 document_layout:
-  # Kích thước khổ giấy in tiêu chuẩn
   page_size: "A4"
-  
-  # Khoảng cách lề trang in (Top, Right, Bottom, Left)
   margin: "20mm"
-  
-  # Quy tắc bẻ dòng tự động cho khối mã nguồn vượt quá độ rộng trang in
   code_overflow_handling: "break-word"
 
 # 6. CẤU HÌNH MỸ THUẬT CHỮ VÀ PHÔNG CHỮ HỆ THỐNG (TYPOGRAPHY CONFIGURATION)
-# Bộ phông chữ phòng thủ chống lỗi hiển thị, vỡ font, bóp mỏng chữ Tiếng Việt trên Windows 11
 typography_configuration:
-  # Chuỗi ưu tiên phông chữ văn bản (Font Stack) hỗ trợ trọn vẹn Tiếng Việt Unicode
   font_family: '"Segoe UI", "Arial", "Calibri", "Tahoma", sans-serif'
-  
-  # Phông chữ cố định chiều rộng (Monospace) dành cho khối mã nguồn và code nội dòng
   code_font_family: '"Consolas", "Courier New", monospace'
-  
-  # Kích thước chữ cơ sở cho đoạn văn bản
   base_font_size: "11pt"
-  
-  # Khoảng cách giữa các dòng văn bản (Tối ưu độ đọc)
   line_height: "1.6"
-  
-  # Mã màu văn bản chuẩn (Tránh màu đen tuyệt đối gây mỏi mắt)
   text_color: "#1a1a1a"
 
 # 7. CẤU HÌNH ĐÁNH SỐ TIÊU ĐỀ TỰ ĐỘNG (HEADING NUMBERING CONFIGURATION)
-# Điều khiển tính năng tự động đếm và chèn ký tự số vào trước tiêu đề trong bản in PDF
 heading_numbering_system:
-  # Kích hoạt tính năng tự động đánh số tiêu đề (True: Bật, False: Tắt)
   enable_auto_numbering: true
-  
-  # Định dạng đánh số cho tiêu đề Cấp 1 (H1)
-  # Giá trị chấp nhận: "roman" (Chữ số La Mã: I, II, III) hoặc "decimal" (Chữ số tự nhiên: 1, 2, 3)
   h1_numbering_style: "roman"
-  
-  # Định dạng đánh số cho tiêu đề Cấp con (H2, H3, H4)
-  # Giới hạn ở cấp 4 để tránh chuỗi số quá dài (e.g., 1.1.1.1.1) theo chuẩn APA/IEEE
-  # Giá trị chấp nhận: "decimal" (Phân cấp tự nhiên: 1.1, 1.2, 1.1.1) hoặc "none" (Không đánh số cấp con)
   sub_heading_numbering_style: "decimal"
-  
-  # Ký tự phân cách giữa chỉ số thứ tự và nội dung tiêu đề
   number_separator: ". "
 
-# 8. CẤU HÌNH ĐỘNG CƠ DỊCH THUẬT TOÁN HỌC (MATH RENDERING SYSTEM)
-# Điều khiển tính năng nhận diện và chuyển đổi công thức LaTeX sang MathML/SVG
-math_rendering_system:
-  # Cờ bật/tắt chính cho toàn bộ luồng xử lý toán học (True: Bật, False: Tắt)
-  enable_math_rendering: true
+# 8. ĐIỀU HƯỚNG TRÌNH DUYỆT KHÔNG ĐẦU (HEADLESS BROWSER ENGINE - MỚI v1.4.0)
+# Quản lý vòng đời và tham số kết xuất trang in PDF của Playwright Chromium
+headless_browser_engine:
+  # Chủng loại trình duyệt thực thi (Chỉ chấp nhận: "chromium")
+  browser_type: "chromium"
   
-  # Chế độ tự động hạ cấp an toàn: Nếu chuỗi LaTeX bị lỗi cú pháp, trả về văn bản gốc thay vì làm sập chương trình
-  fallback_to_raw_on_error: true
+  # Chế độ ẩn giao diện GUI (True: Chạy ngầm hiệu năng cao)
+  headless: true
+  
+  # Thời gian chờ tối đa cho tiến trình nạp và render 1 trang (tính bằng mili-giây)
+  page_timeout_ms: 30000
+  
+  # Tiêu chuẩn xác định trang web đã nạp xong hoàn toàn
+  # Giá trị chấp nhận: "networkidle" (Chờ toàn bộ tài nguyên tĩnh và JS đúc xong DOM)
+  wait_until_event: "networkidle"
+  
+  # Kích hoạt in hình nền và màu sắc định dạng CSS (Print Background Graphics)
+  print_background: true
+  
+  # Ưu tiên sử dụng kích thước trang in khai báo trong CSS @page thay vì tham số mặc định
+  prefer_css_page_size: true
 
-# 9. CẤU HÌNH ĐỘNG CƠ XỬ LÝ BẢNG BIỂU GFM (TABLE RENDERING SYSTEM)
-# Điều khiển tính năng phân tích cú pháp bảng Markdown và quản lý tràn viền vật lý
+# 9. BỘ KẾT XUẤT TOÁN HỌC KATEX OFFLINE (KATEX OFFLINE CONFIG - MỚI v1.4.0)
+# Cấu hình tài nguyên JS/CSS nội bộ để biên dịch 100% vĩ lệnh LaTeX không cần Internet
+katex_offline_config:
+  # Cờ bật/tắt chính cho động cơ kết xuất toán học KaTeX
+  enable_katex: true
+  
+  # Đường dẫn tương đối trỏ đến thư mục chứa tài nguyên tĩnh KaTeX nội bộ
+  assets_dir: "assets/katex"
+  
+  # Tên các tệp tĩnh bắt buộc phải xuất hiện trong thư mục assets_dir
+  css_filename: "katex.min.css"
+  js_filename: "katex.min.js"
+  auto_render_js_filename: "auto-render.min.js"
+  
+  # Chế độ nghiêm ngặt khi gặp cú pháp LaTeX lạ (False: Bỏ qua cảnh báo nhỏ)
+  strict_mode: false
+  
+  # Van ngắt mạch phòng thủ: Trả về văn bản gốc nếu công thức bị lỗi cú pháp thay vì làm sập trang
+  throw_on_error: false
+  
+  # Danh sách ranh giới nhận diện công thức toán học (Delimiters)
+  delimiters:
+    - left: "$$"
+      right: "$$"
+      display: true
+    - left: "$"
+      right: "$"
+      display: false
+    - left: "\\["
+      right: "\\]"
+      display: true
+    - left: "\\("
+      right: "\\)"
+      display: false
+
+# 10. CẤU HÌNH ĐỘNG CƠ XỬ LÝ BẢNG BIỂU GFM (TABLE RENDERING SYSTEM)
 table_rendering_system:
-  # Kích hoạt bộ phân tích bảng biểu GFM trong AST Parser (True: Bật, False: Tắt)
   enable_gfm_tables: true
-  
-  # Chiến lược xử lý khi bảng biểu vượt quá độ rộng vùng in A4
-  # Giá trị chấp nhận: "clip_and_warn" (Cắt bỏ phần thừa tràn ngang và xuất cảnh báo ra Terminal)
   overflow_strategy: "clip_and_warn"
-  
-  # Tự động lặp lại hàng tiêu đề của bảng (Table Header) khi bảng bị ngắt sang trang mới
   repeat_header_on_page_break: true
-  
-  # Ngưỡng độ rộng chiều ngang tối đa của vùng in A4 (tính bằng mm) dùng để kích hoạt cảnh báo
   max_printable_width_mm: 170
 
-# 10. MA TRẬN QUY CHUẨN IN ẤN HỌC THUẬT (ACADEMIC STANDARDS PROFILE)
-# Định hình phong cách trình bày văn bản theo các tiêu chuẩn xuất bản quốc tế
+# 11. MA TRẬN QUY CHUẨN IN ẤN HỌC THUẬT (ACADEMIC STANDARDS PROFILE)
 academic_standards_profile:
-  # Tiêu chuẩn học thuật đang kích hoạt
-  # Giá trị chấp nhận: "none" (Mặc định), "apa" (APA 7th), "ieee" (IEEE), "harvard" (Harvard)
   active_standard: "apa"
-  
-  # Bật tính năng chống dòng mồ côi (Orphans) và dòng góa phụ (Widows)
-  # Đảm bảo không có dòng văn bản đơn lẻ trơ trọi ở đầu hoặc cuối trang in
   prevent_orphans_and_widows: true
-  
-  # Quy tắc ngắt trang cho khối mã nguồn và bảng biểu
-  # Giá trị chấp nhận: "avoid" (Ngăn ngắt trang giữa khối), "auto" (Cho phép ngắt tự nhiên)
   code_block_page_break_inside: "avoid"
   table_page_break_inside: "avoid"

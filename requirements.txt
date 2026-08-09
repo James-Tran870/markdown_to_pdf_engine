@@ -1,18 +1,15 @@
 # ==============================================================================
 # BẢNG KÊ VẬT TƯ PHỤ THUỘC (REQUIREMENTS SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.0 - Academic & Table Engine)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.0 - Playwright Headless Engine)
 # ==============================================================================
 
-# 1. THƯ VIỆN NỀN TẢNG HIỆN CÓ
+# 1. THƯ VIỆN NỀN TẢNG XỬ LÝ VĂN BẢN VÀ AST
 markdown-it-py>=3.0.0
 pygments>=2.17.0
-weasyprint>=61.0
 pyyaml>=6.0.1
-
-# 2. THƯ VIỆN BỔ SUNG CHO TÍNH NĂNG XỬ LÝ TOÁN HỌC (v1.2.0)
 mdit-py-plugins>=0.4.0
-latex2mathml>=3.77.0
-
-# 3. THƯ VIỆN BỔ SUNG CHO ĐỘNG CƠ GFM VÀ BẢNG BIỂU (MỚI v1.3.0)
-# Bắt buộc đi kèm khi kích hoạt preset "gfm-like" trong ASTParser
 linkify-it-py>=2.0.0
+
+# 2. ĐỘNG CƠ TRÌNH DUYỆT KHÔNG ĐẦU VÀ ĐÓNG GÓI PDF (MỚI v1.4.0)
+# Thay thế WeasyPrint/GTK3 và ziamath bằng Playwright Chromium Engine
+playwright>=1.40.0

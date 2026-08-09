@@ -1,9 +1,11 @@
 # ==============================================================================
-# BỘ PHÂN TÍCH CÂY CÚ PHÁP TRỪU TƯỢNG (AST PARSER MODULE)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.0 - Tích hợp GFM Tables & Math)
-# Kiến trúc: Defensive Programming & Isolation Layer
+# PHẦN 1: TỆP src/ast_parser.py (NÂNG CẤP BỘ LỌC MẶT NẠ TOÁN HỌC v1.4.2)
+# Đường dẫn: src/ast_parser.py
+# Kiến trúc: Safe Masking Pattern & Pre-AST Transformation
 # ==============================================================================
 
+import re
+import uuid
 from pathlib import Path
 
 from markdown_it import MarkdownIt
@@ -17,70 +19,79 @@ class ASTParser:
         encoding_standard: str = "utf-8",
         enable_math: bool = True,
         enable_tables: bool = True,
+        math_syntax_delimiters: list | None = None,
     ):
-        """Khởi tạo động cơ phân tích AST với chuẩn mã hóa cưỡng chế, bộ lọc toán học và cảm biến bảng biểu.
-
-        Args:
-            encoding_standard (str): Chuẩn mã hóa luồng I/O (mặc định 'utf-8').
-            enable_math (bool): Cờ bật/tắt tính năng nhận diện ký hiệu toán học TeX ($/$$).
-            enable_tables (bool): Cờ bật/tắt tính năng nhận diện bảng biểu chuẩn GFM.
-        """
-        # 1. Cưỡng chế chuẩn mã hóa UTF-8 theo yêu cầu kiến trúc phòng thủ
+        """Khởi tạo động cơ phân tích AST với chuẩn mã hóa cưỡng chế, cảm biến bảng GFM và danh sách ranh giới toán học."""
         self.encoding_standard = encoding_standard
         self.enable_math = enable_math
         self.enable_tables = enable_tables
+        self.math_syntax_delimiters = math_syntax_delimiters or ["dollars", "brackets"]
 
-        # 2. Khởi tạo động cơ phân tích markdown-it-py dựa trên cờ cấu hình bảng biểu GFM
         if self.enable_tables:
-            # Preset 'gfm-like' kích hoạt sẵn cảm biến phân tích bảng biểu (Tables), gạch ngang, autolink
             self.md_engine = MarkdownIt("gfm-like")
         else:
-            # Quay về preset 'commonmark' thuần túy không hỗ trợ bảng biểu
             self.md_engine = MarkdownIt("commonmark")
 
-        # 3. Lắp đặt "Bộ Ống Kính X-Quang" (Plugin Toán học) nếu cờ cấu hình bật
         if self.enable_math:
             self._register_math_plugin()
 
     def _register_math_plugin(self) -> None:
-        """Đăng ký plugin texmath để nhận diện ranh giới ký tự $ (inline) và $$ (block)."""
+        """Đăng ký plugin texmath chuyên biệt cấu hình chuẩn mặc định."""
         try:
             from mdit_py_plugins.texmath import texmath_plugin
 
-            # Kích hoạt plugin với quy tắc nhận diện dấu dollar ($ inline và $$ block)
-            self.md_engine.use(texmath_plugin, macros={"delimiters": "dollars"})
+            # Giải pháp Kiến trúc: Hủy bỏ vòng lặp gây xung đột quy tắc (Rule Collision).
+            # Chỉ nạp một lần duy nhất. Mọi chuẩn khác (brackets) sẽ được đồng bộ hóa
+            # thành dollars thông qua màng lọc _unify_math_delimiters.
+            self.md_engine.use(texmath_plugin)
         except ImportError as error:
-            # Aptomat phòng thủ: Nếu thiếu thư viện mdit-py-plugins, cảnh báo và hạ cấp an toàn
             print(
                 f"[CẢNH_BÁO_AST] Không thể nạp 'mdit_py_plugins.texmath': {error}. "
                 "Hệ thống sẽ hạ cấp về chế độ phân tích văn bản thuần."
             )
 
+    def _unify_math_delimiters(self, raw_text: str) -> str:
+        """Đồng bộ hóa đa tiêu chuẩn LaTeX về chuẩn dollars bằng phương pháp Mặt nạ an toàn."""
+        if not self.enable_math:
+            return raw_text
+
+        code_blocks = {}
+
+        def mask_code(match):
+            # Tạo mã định danh độc nhất không trùng lặp cho mỗi khối mã
+            placeholder = f"__CODE_BLOCK_{uuid.uuid4().hex}__"
+            code_blocks[placeholder] = match.group(0)
+            return placeholder
+
+        # 1. Dán mặt nạ bảo vệ: Che các khối mã nguồn nhiều dòng (```...```) và nội dòng (`...`)
+        masked_text = re.sub(r"(?s)```.*?```", mask_code, raw_text)
+        masked_text = re.sub(r"`[^`\n]+`", mask_code, masked_text)
+
+        # 2. Phun sơn đồng bộ: Chuyển đổi cú pháp Brackets sang Dollars vô điều kiện
+        masked_text = re.sub(r"(?s)\\\[(.*?)\\\]", r"$$\1$$", masked_text)
+        masked_text = re.sub(r"\\\((.*?)\\\)", r"$\1$", masked_text)
+
+        # 3. Lột mặt nạ: Trả lại nguyên trạng các khối mã nguồn đã được bảo vệ
+        for placeholder, original_code in code_blocks.items():
+            masked_text = masked_text.replace(placeholder, original_code)
+
+        return masked_text
+
     def parse_markdown_file(self, file_path: Path) -> list:
-        """Đọc tệp Markdown theo chuẩn UTF-8 và phân rã thành danh sách các Nút AST (Tokens).
-
-        Args:
-            file_path (Path): Đường dẫn tuyệt đối hoặc tương đối tới tệp Markdown đầu vào.
-
-        Returns:
-            list: Danh sách các đối tượng Token chứa thông tin phân rã cấu trúc (Bao gồm cả Token bảng biểu).
-
-        Raises:
-            FileNotFoundError: Khi tệp đầu vào không tồn tại trên đĩa cứng.
-            UnicodeDecodeError: Khi tệp bị xung đột mã hóa khác UTF-8.
-        """
+        """Đọc tệp Markdown theo chuẩn UTF-8 và phân rã thành danh sách các Nút AST (Tokens)."""
         if not file_path.exists():
             raise FileNotFoundError(
                 f"[LỖI_I/O] Không tìm thấy tệp đầu vào tại: {file_path}"
             )
 
         try:
-            # Ngăn chặn sự cố trôi dạt mã hóa cp1252 trên Windows 11 bằng UTF-8 cưỡng chế
             with open(file_path, "r", encoding=self.encoding_standard) as file_stream:
                 raw_text = file_stream.read()
 
-            # Phân rã văn bản thành chuỗi các đối tượng Token (Bao gồm Nút toán học và Nút bảng biểu)
-            tokens = self.md_engine.parse(raw_text)
+            # Bật màng lọc tiền xử lý toán học trước khi đẩy vào máy phân tích AST
+            unified_text = self._unify_math_delimiters(raw_text)
+            tokens = self.md_engine.parse(unified_text)
+
             return tokens
         except UnicodeDecodeError as error:
             raise UnicodeDecodeError(

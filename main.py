@@ -1,5 +1,7 @@
 # ==============================================================================
-# TỆP 1: main.py (MÃ NGUỒN BỘ ĐIỀU PHỐI ĐÃ TỐI ƯU BẢO TỒN LUỒNG TRUYỀN)
+# TỆP 1: main.py (BỘ ĐIỀU PHỐI PIPELINE PLAYWRIGHT & KATEX v1.4.0)
+# Dự án: markdown_to_pdf_engine
+# Kiến trúc: Separation of Concerns (SoC) & Defensive Pipeline Orchestration
 # ==============================================================================
 
 import sys
@@ -59,7 +61,7 @@ def ensure_directories_exist(
 def execute_single_file_pipeline(
     input_md_path: Path, output_pdf_path: Path, config: dict
 ) -> bool:
-    """Biên dịch một tệp Markdown duy nhất sang PDF với cơ chế cô lập ngoại lệ cụ thể."""
+    """Biên dịch một tệp Markdown duy nhất sang PDF qua Playwright và KaTeX Engine."""
     try:
         # 1. Trích xuất các tham số cấu hình cơ bản từ YAML
         encoding_standard = config.get("global_encoding_standard", "utf-8")
@@ -68,12 +70,12 @@ def execute_single_file_pipeline(
         max_bookmark_level = heading_config.get("max_bookmark_level", 4)
         numbering_config = config.get("heading_numbering_system", {})
 
-        # 2. Trích xuất khối cấu hình động cơ toán học (v1.2.0)
-        math_config = config.get("math_rendering_system", {})
-        enable_math = math_config.get("enable_math_rendering", True)
-        fallback_to_raw = math_config.get("fallback_to_raw_on_error", True)
+        # 2. Trích xuất khối cấu hình động cơ Playwright và KaTeX (Nâng cấp v1.4.0)
+        browser_config = config.get("headless_browser_engine", {})
+        katex_config = config.get("katex_offline_config", {})
+        enable_math = katex_config.get("enable_katex", True)
 
-        # 3. Trích xuất khối cấu hình động cơ xử lý bảng biểu GFM và học thuật (v1.3.0)
+        # 3. Trích xuất khối cấu hình động cơ xử lý bảng biểu GFM và học thuật
         table_config = config.get("table_rendering_system", {})
         enable_tables = table_config.get("enable_gfm_tables", True)
         academic_config = config.get("academic_standards_profile", {})
@@ -90,24 +92,25 @@ def execute_single_file_pipeline(
         with open(input_md_path, "r", encoding=encoding_standard) as file_stream:
             markdown_text = file_stream.read()
 
-        # 6. Kết xuất mã HTML ngữ nghĩa (Truyền table_config tiếp nhận v1.3.0)
+        # 6. Kết xuất mã HTML ngữ nghĩa (Bơm katex_config để tiêm script KaTeX Offline)
         renderer = HTMLRenderer(
             theme_name=theme_profile,
             max_bookmark_level=max_bookmark_level,
             enable_math=enable_math,
-            fallback_to_raw=fallback_to_raw,
             table_config=table_config,
+            katex_config=katex_config,
         )
         pygments_css, rendered_html = renderer.convert_to_html(markdown_text)
 
         # 7. Đảm bảo thư mục cha của tệp đầu ra đã được tạo
         output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 8. Biên dịch Paged Media CSS và xuất tệp PDF (Truyền academic_config tiếp nhận v1.3.0)
+        # 8. Biên dịch PDF qua Playwright Chromium Engine
         compiler = PDFCompiler(
             output_encoding=encoding_standard,
             numbering_config=numbering_config,
             academic_config=academic_config,
+            browser_config=browser_config,
         )
         compiler.compile_to_pdf(
             html_content=rendered_html,
@@ -132,7 +135,7 @@ def execute_single_file_pipeline(
 
 def batch_process_directory(base_directory: Path) -> None:
     """Động cơ điều phối quét hàng loạt và phân loại tài liệu tự động."""
-    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (BATCH PROCESSING v1.3.0) ===")
+    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (PLAYWRIGHT v1.4.0) ===")
 
     config_path = base_directory / "config" / "settings.yaml"
     config = load_configuration(config_path)

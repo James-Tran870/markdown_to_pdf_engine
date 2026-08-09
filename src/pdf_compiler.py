@@ -1,86 +1,37 @@
 # ==============================================================================
 # BỘ BIÊN DỊCH PDF VÀ ĐỊNH DẠNG PAGED MEDIA (PDF COMPILER MODULE)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.2 - Typography & Heading Upgrade)
-# Kiến trúc: Defensive Programming & Isolation Layer
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.3 - Strict Left-Align & KaTeX Fix)
+# Kiến trúc: Defensive Programming, Playwright CDP Synchronization & Isolation Layer
 # ==============================================================================
 
-import io
-import os
-import sys
-from contextlib import contextmanager
 from pathlib import Path
 
-
-@contextmanager
-def _suppress_c_stderr():
-    """Bộ điều hướng tạm thời cô lập luồng C-Runtime stderr (File Descriptor 2).
-    
-    Triệt tiêu hoàn toàn các thông báo nhiễu cấp hệ điều hành từ thư viện C (GLib/GIO/GTK3)
-    trên Windows 11 mà không ảnh hưởng đến luồng xử lý ngoại lệ của Python.
-    """
-    if sys.platform != "win32":
-        yield
-        return
-
-    os.environ["G_MESSAGES_DEBUG"] = "none"
-    os.environ["GLIB_LOG_LEVEL"] = "4"
-    os.environ["G_ENABLE_DIAGNOSTIC"] = "0"
-
-    try:
-        stderr_fd = sys.stderr.fileno()
-        saved_stderr_fd = os.dup(stderr_fd)
-        devnull_fd = os.open(os.devnull, os.O_WRONLY)
-        os.dup2(devnull_fd, stderr_fd)
-        os.close(devnull_fd)
-        try:
-            yield
-        finally:
-            os.dup2(saved_stderr_fd, stderr_fd)
-            os.close(saved_stderr_fd)
-    except (AttributeError, io.UnsupportedOperation, OSError):
-        yield
-
-
-def _register_gtk_dll_directories() -> None:
-    """Tự động phát hiện và đăng ký đường dẫn DLL của GTK3 trên Windows 11."""
-    if sys.platform == "win32":
-        possible_gtk_paths = [
-            Path(r"C:\Program Files\GTK3-Runtime Win64\bin"),
-            Path(r"C:\Program Files (x86)\GTK3-Runtime Win64\bin"),
-            Path(r"C:\msys64\ucrt64\bin"),
-            Path(r"C:\msys64\mingw64\bin"),
-        ]
-        for gtk_path in possible_gtk_paths:
-            if gtk_path.exists():
-                os.add_dll_directory(str(gtk_path))
-                os.environ["PATH"] = str(gtk_path) + os.pathsep + os.environ.get("PATH", "")
-                break
-
-
-_register_gtk_dll_directories()
-
-with _suppress_c_stderr():
-    try:
-        from weasyprint import HTML
-    except OSError as error:
-        raise ImportError(
-            f"[LỖI_HỆ_THỐNG] Không thể nạp thư viện WeasyPrint/GTK3: {error}"
-        ) from error
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
 
 
 class PDFCompiler:
-    """Động cơ biên dịch HTML và CSS Paged Media thành tệp PDF chất lượng cao."""
+    """Động cơ biên dịch HTML và CSS Paged Media thành tệp PDF qua Playwright Chromium."""
 
     def __init__(
         self,
         output_encoding: str = "utf-8",
         numbering_config: dict | None = None,
         academic_config: dict | None = None,
+        browser_config: dict | None = None,
     ):
-        """Khởi tạo động cơ PDF Compiler với tham số mã hóa, đánh số và quy chuẩn học thuật."""
+        """Khởi tạo động cơ PDF Compiler với tham số mã hóa, đánh số, học thuật và Playwright."""
         self.output_encoding = output_encoding
         self.numbering_config = numbering_config or {}
         self.academic_config = academic_config or {}
+        self.browser_config = browser_config or {
+            "browser_type": "chromium",
+            "headless": True,
+            "page_timeout_ms": 30000,
+            "wait_until_event": "networkidle",
+            "print_background": True,
+            "prefer_css_page_size": True,
+        }
 
     def _generate_css_counters(self) -> str:
         """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề."""
@@ -136,22 +87,24 @@ class PDFCompiler:
         }}
         """
 
-    def compile_to_pdf(
-        self, html_content: str, pygments_css: str, output_path: Path
-    ) -> None:
-        """Đóng gói HTML và CSS Paged Media thành tệp PDF hoàn chỉnh chuẩn Typography."""
+    def _build_paged_media_css(self, pygments_css: str) -> str:
+        """Tạo lập bộ CSS Paged Media hoàn chỉnh bao bọc toàn bộ quy chuẩn in ấn."""
         dynamic_counters_css = self._generate_css_counters()
 
         prevent_orphans = self.academic_config.get("prevent_orphans_and_widows", True)
         orphans_widows_css = "orphans: 2; widows: 2;" if prevent_orphans else ""
 
-        paged_media_css = f"""
+        return f"""
+        {pygments_css}
+
         @page {{ 
             size: A4; 
             margin: 20mm; 
         }}
         
-        body {{
+        /* CƯỠNG CHẾ CĂN LỀ TRÁI TOÀN BỘ VĂN BẢN (TRIỆT TIÊU LỖI RÒ RỈ CĂN GIỮA) */
+        body, p, ul, ol, li, blockquote {{
+            text-align: left !important;
             font-family: "Segoe UI", "Arial", "Calibri", "Tahoma", sans-serif;
             font-size: 11pt;
             line-height: 1.6;
@@ -163,13 +116,15 @@ class PDFCompiler:
 
         p {{
             {orphans_widows_css}
+            text-align: left !important;
         }}
 
         /* ================================================================== */
         /* CẤU HÌNH TYPOGRAPHY TIÊU ĐỀ CHUẨN APA / IEEE (HEADING STYLING)     */
-        /* Cưỡng chế BOLD toàn bộ từ H1-H6; Khóa sàn kích thước H5, H6 = 11pt */
+        /* Cưỡng chế BOLD & LEFT-ALIGN toàn bộ từ H1-H6                       */
         /* ================================================================== */
         h1, h2, h3, h4, h5, h6 {{
+            text-align: left !important;
             font-family: "Segoe UI Semibold", "Arial Bold", sans-serif;
             font-weight: bold !important;
             color: #000000;
@@ -187,7 +142,6 @@ class PDFCompiler:
         h3 {{ bookmark-level: 3; font-size: 13pt; }}
         h4 {{ bookmark-level: 4; font-size: 11pt; }}
         
-        /* H5 và H6: Khóa sàn 11pt (bằng văn bản nội dung), bổ sung nghiêng chuẩn APA */
         h5 {{ 
             font-size: 11pt !important; 
             font-style: italic; 
@@ -202,9 +156,10 @@ class PDFCompiler:
         {dynamic_counters_css}
 
         /* ================================================================== */
-        /* KIỂM SOÁT BẺ DÒNG VÀ CHỐNG CẮT PHÂN MẢNH KHỐI MÃ (CODE BLOCK)      */
+        /* KIỂM SOÁT BẺ DÒNG VÀ CĂN LỀ KHỐI MÃ (CODE BLOCK)                   */
         /* ================================================================== */
-        code, pre {{ 
+        code, pre, .highlight {{ 
+            text-align: left !important;
             font-family: "Consolas", "Courier New", monospace;
             font-size: 9.5pt;
             overflow-wrap: break-word;
@@ -215,6 +170,7 @@ class PDFCompiler:
         pre {{
             page-break-inside: avoid;
             break-inside: avoid;
+            text-align: left !important;
         }}
 
         .highlight {{
@@ -223,6 +179,7 @@ class PDFCompiler:
             margin-bottom: 1em;
             page-break-inside: avoid;
             break-inside: avoid;
+            text-align: left !important;
         }}
 
         /* ================================================================== */
@@ -235,12 +192,13 @@ class PDFCompiler:
             margin-bottom: 1.2em;
             page-break-inside: avoid;
             break-inside: avoid;
+            text-align: left !important;
         }}
 
         th, td {{
             border: 1pt solid #1a1a1a;
             padding: 8px 12px;
-            text-align: left;
+            text-align: left !important;
             vertical-align: top;
             font-size: 10pt;
         }}
@@ -257,35 +215,27 @@ class PDFCompiler:
         }}
 
         /* ================================================================== */
-        /* LỚP GIÁP CSS PHÒNG THỦ: TOÁN HỌC (DEFENSIVE MATHML STYLING)        */
+        /* CHỈ CĂN GIỮA DUY NHẤT KHỐI TOÁN HỌC (ISOLATED KATEX BLOCK)         */
         /* ================================================================== */
-        .math-inline {{
+        .math-tex {{
             display: inline-block;
-            vertical-align: baseline;
+            text-align: initial;
             margin: 0 0.1em;
         }}
 
-        .math-block {{
+        div.math-tex {{
             display: block;
-            text-align: center;
+            text-align: center !important;
             margin: 1.2em 0;
             page-break-inside: avoid;
             break-inside: avoid;
         }}
 
-        math {{
-            font-family: "Cambria Math", "Latin Modern Math", "STIX Two Math", serif;
-            font-size: 0.95em; 
-        }}
-
-        msup > *:nth-child(2) {{
-            vertical-align: super;
-            font-size: 0.75em;
-        }}
-
-        msub > *:nth-child(2) {{
-            vertical-align: sub;
-            font-size: 0.75em;
+        .katex-display {{
+            text-align: center !important;
+            margin: 0.5em 0 !important;
+            overflow-x: auto;
+            overflow-y: hidden;
         }}
 
         .math-error, .math-raw {{
@@ -296,15 +246,89 @@ class PDFCompiler:
             padding: 2px 6px;
             border-radius: 3px;
             font-size: 0.9em;
+            text-align: left !important;
         }}
         """
 
-        full_document = f"""<!DOCTYPE html>
-        <html lang="vi"><head><meta charset="{self.output_encoding}">
-        <style>{pygments_css}\n{paged_media_css}</style>
-        </head><body>{html_content}</body></html>"""
+    def compile_to_pdf(
+        self, html_content: str, pygments_css: str, output_path: Path
+    ) -> None:
+        """Đóng gói HTML và render PDF thông qua Playwright Chromium Headless Engine."""
+        paged_media_css = self._build_paged_media_css(pygments_css)
 
-        with _suppress_c_stderr():
-            HTML(string=full_document).write_pdf(target=output_path)
-            
-        print(f"[THÀNH_CÔNG] Đã xuất bản tệp PDF sắc nét tại: {output_path}")
+        full_document = f"""<!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="{self.output_encoding}">
+            <style>{paged_media_css}</style>
+        </head>
+        <body>
+            {html_content}
+        </body>
+        </html>"""
+
+        timeout_ms = self.browser_config.get("page_timeout_ms", 30000)
+        wait_until = self.browser_config.get("wait_until_event", "networkidle")
+        print_bg = self.browser_config.get("print_background", True)
+        prefer_css_page = self.browser_config.get("prefer_css_page_size", True)
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_html_path = output_path.with_suffix(".temp.html")
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-web-security",
+                    "--allow-file-access-from-files",
+                    "--no-sandbox",
+                ],
+            )
+            page = browser.new_page()
+
+            try:
+                # 1. Ghi nội dung HTML tĩnh ra tệp tạm vật lý
+                temp_html_path.write_text(full_document, encoding=self.output_encoding)
+
+                # 2. Điều hướng Chromium bằng giao thức an toàn file:///
+                page.goto(
+                    temp_html_path.as_uri(),
+                    timeout=timeout_ms,
+                    wait_until=wait_until,
+                )
+
+                # 3. Đợi mỏ neo KaTeX đúc xong DOM toán học nếu có công thức
+                if (
+                    '<span class="math-tex">' in html_content
+                    or '<div class="math-tex">' in html_content
+                ):
+                    try:
+                        page.wait_for_selector(".katex", timeout=5000)
+                    except PlaywrightTimeoutError:
+                        print(
+                            "    -> [THÔNG_TIN] Trình duyệt đã bỏ qua pha kết xuất DOM toán học "
+                            "(Tài liệu không chứa công thức phức tạp hoặc thời gian Timeout kết thúc sớm)."
+                        )
+
+                # 4. Xuất bản tệp PDF chuẩn trang in A4 qua Playwright API
+                page.pdf(
+                    path=str(output_path),
+                    format="A4",
+                    print_background=print_bg,
+                    prefer_css_page_size=prefer_css_page,
+                    margin={
+                        "top": "20mm",
+                        "bottom": "20mm",
+                        "left": "20mm",
+                        "right": "20mm",
+                    },
+                )
+            finally:
+                browser.close()
+                # 5. Dọn dẹp tệp HTML trung gian bảo vệ không gian đĩa
+                if temp_html_path.exists():
+                    temp_html_path.unlink()
+
+        print(
+            f"[THÀNH_CÔNG] Đã xuất bản tệp PDF sắc nét qua Chromium tại: {output_path}"
+        )

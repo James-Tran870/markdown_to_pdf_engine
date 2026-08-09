@@ -1,6 +1,6 @@
 # ==============================================================================
 # BỘ KIỂM THỬ ĐỐI KHÁNG HỘP TRẮNG (WHITE-BOX RED-TEAM TEST SUITE)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.0 - Academic & Table Engine)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.3 - Playwright & KaTeX Engine)
 # Kiến trúc: Fault Tolerance & Isolation Verification Layer
 # ==============================================================================
 
@@ -19,12 +19,12 @@ from src.pdf_compiler import PDFCompiler
 
 
 class RedTeamTestSuite(unittest.TestCase):
-    """Bộ kiểm thử đối kháng Hộp Trắng (White-Box Red-Teaming) nâng cấp v1.3.0."""
+    """Bộ kiểm thử đối kháng Hộp Trắng (White-Box Red-Teaming) nâng cấp v1.4.3."""
 
     def setUp(self):
         """Khởi tạo môi trường giả lập và các thư mục thử nghiệm tạm thời."""
-        self.base_dir = Path(__file__).parent
-        self.temp_dir = self.base_dir / "temp_redteam_workspace"
+        self.base_dir = Path(__file__).parent.parent
+        self.temp_dir = self.base_dir / "tests" / "temp_redteam_workspace"
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
         self.input_dir = self.temp_dir / "input"
@@ -63,9 +63,21 @@ heading_numbering_system:
   h1_numbering_style: "roman"
   sub_heading_numbering_style: "decimal"
   number_separator: ". "
-math_rendering_system:
-  enable_math_rendering: true
-  fallback_to_raw_on_error: true
+headless_browser_engine:
+  browser_type: "chromium"
+  headless: true
+  page_timeout_ms: 30000
+  wait_until_event: "networkidle"
+  print_background: true
+  prefer_css_page_size: true
+katex_offline_config:
+  enable_katex: true
+  assets_dir: "assets/katex"
+  css_filename: "katex.min.css"
+  js_filename: "katex.min.js"
+  auto_render_js_filename: "auto-render.min.js"
+  strict_mode: false
+  throw_on_error: false
 table_rendering_system:
   enable_gfm_tables: true
   overflow_strategy: "clip_and_warn"
@@ -92,12 +104,29 @@ academic_standards_profile:
                 "enable_gfm_tables": True,
                 "overflow_strategy": "clip_and_warn",
             },
+            katex_config={
+                "enable_katex": True,
+                "assets_dir": "assets/katex",
+                "css_filename": "katex.min.css",
+                "js_filename": "katex.min.js",
+                "auto_render_js_filename": "auto-render.min.js",
+                "strict_mode": False,
+                "throw_on_error": False,
+            },
         )
         self.compiler = PDFCompiler(
             output_encoding="utf-8",
             academic_config={
                 "active_standard": "apa",
                 "prevent_orphans_and_widows": True,
+            },
+            browser_config={
+                "browser_type": "chromium",
+                "headless": True,
+                "page_timeout_ms": 30000,
+                "wait_until_event": "networkidle",
+                "print_background": True,
+                "prefer_css_page_size": True,
             },
         )
 
@@ -152,6 +181,7 @@ academic_standards_profile:
         try:
             self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
             self.assertTrue(output_pdf.exists())
+            self.assertGreater(output_pdf.stat().st_size, 0)
         finally:
             if output_pdf.exists():
                 output_pdf.unlink()
@@ -224,25 +254,33 @@ academic_standards_profile:
         self.assertTrue(expected_pdf.exists())
 
     def test_scenario_7_math_rendering_and_fault_tolerance(self):
-        """Kịch bản 7: Kiểm thử biên dịch MathML và cơ chế hạ cấp lỗi LaTeX."""
-        valid_math_content = (
-            "# Báo Cáo Toán Học\n"
-            "Công thức nội dòng $2^{30}$ và công thức khối:\n\n"
-            "$$\\frac{a}{b}$$\n"
+        """Kịch bản 7 (NÂNG CẤP v1.4.3): Kiểm thử đúc KaTeX Chromium, vĩ lệnh phức tạp và đa tiêu chuẩn TeX/LaTeX2e."""
+        complex_math_content = (
+            "# Báo Cáo Toán Học Cao Cấp\n"
+            "1. Plain TeX: $$x = {-b \\pm \\sqrt{b^2 - 4ac} \\over 2a}$$\n"
+            "2. LaTeX2e: \\[x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\]\n"
+            "3. KaTeX Web: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\n"
+            "$$\n"             "\\boxed{\n"             "\\mathbb Z\n"             "\\;\\xrightarrow{\\text{identify values differing by }N}\\;\n"             "\\mathbb Z/N\\mathbb Z\n"             "}\n"             "$$\n"
         )
-        _css, rendered_html = self.renderer.convert_to_html(valid_math_content)
+        pygments_css, rendered_html = self.renderer.convert_to_html(complex_math_content)
 
-        self.assertIn('<span class="math-inline">', rendered_html)
-        self.assertIn('<div class="math-block">', rendered_html)
-        self.assertIn("<math", rendered_html)
+        # Kiểm định 1: Mã HTML trung gian chứa các thẻ bọc toán học và script KaTeX
+        self.assertIn('<span class="math-tex">', rendered_html)
+        self.assertIn('<div class="math-tex">', rendered_html)
+        self.assertIn("katex.min.js", rendered_html)
 
-        invalid_math_content = "Công thức lỗi: $\\invalidlatex_command{{{$"
-        _css_err, rendered_err_html = self.renderer.convert_to_html(invalid_math_content)
-
-        self.assertIn('<span class="math-error">', rendered_err_html)
+        # Kiểm định 2: Thực thi xuất bản PDF qua Playwright Chromium và xác minh dung lượng tệp
+        output_pdf = self.temp_dir / "temp_katex_complex_test.pdf"
+        try:
+            self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
+            self.assertTrue(output_pdf.exists())
+            self.assertGreater(output_pdf.stat().st_size, 0)
+        finally:
+            if output_pdf.exists():
+                output_pdf.unlink()
 
     def test_scenario_8_gfm_table_parsing_and_structure(self):
-        """Kịch bản 8 (MỚI v1.3.0): Kiểm thử nhận diện và cấu trúc hóa bảng biểu GFM."""
+        """Kịch bản 8: Kiểm thử nhận diện và cấu trúc hóa bảng biểu GFM."""
         table_markdown = (
             "# Kiểm thử Bảng GFM\n\n"
             "| Cột Tiêu Đề 1 | Cột Tiêu Đề 2 |\n"
@@ -260,14 +298,12 @@ academic_standards_profile:
         self.assertIn("tr_open", token_types)
 
         _css, rendered_html = self.renderer.convert_to_html(table_markdown)
-        
-        # Đã cập nhật chuỗi kiểm định để bám sát thuộc tính style do GFM sinh ra
         self.assertIn("<table>", rendered_html)
         self.assertIn('<th style="text-align:left">Cột Tiêu Đề 1</th>', rendered_html)
         self.assertIn('<td style="text-align:left">Dữ liệu Dòng 1</td>', rendered_html)
 
     def test_scenario_9_table_overflow_clipping_and_logging(self):
-        """Kịch bản 9 (MỚI v1.3.0): Kiểm thử bảng biểu cực rộng vượt quá lề giấy A4."""
+        """Kịch bản 9: Kiểm thử bảng biểu cực rộng vượt quá lề giấy A4."""
         header_row = "| " + " | ".join([f"Cột {i}" for i in range(1, 26)]) + " |\n"
         sep_row = "| " + " | ".join([":---" for _ in range(25)]) + " |\n"
         data_row = "| " + " | ".join([f"Dữ liệu {i}" for i in range(1, 26)]) + " |\n"
@@ -279,12 +315,13 @@ academic_standards_profile:
         try:
             self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
             self.assertTrue(output_pdf.exists())
+            self.assertGreater(output_pdf.stat().st_size, 0)
         finally:
             if output_pdf.exists():
                 output_pdf.unlink()
 
     def test_scenario_10_academic_apa_profile_and_break_avoidance(self):
-        """Kịch bản 10 (MỚI v1.3.0): Kiểm thử quy chuẩn in ấn học thuật APA và chống ngắt trang."""
+        """Kịch bản 10: Kiểm thử quy chuẩn in ấn học thuật APA và chống ngắt trang."""
         academic_content = (
             "# Báo Cáo Học Thuật Chuẩn APA\n\n"
             "Đoạn văn bản mở đầu báo cáo học thuật.\n\n"
@@ -299,6 +336,7 @@ academic_standards_profile:
         try:
             self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
             self.assertTrue(output_pdf.exists())
+            self.assertGreater(output_pdf.stat().st_size, 0)
         finally:
             if output_pdf.exists():
                 output_pdf.unlink()
