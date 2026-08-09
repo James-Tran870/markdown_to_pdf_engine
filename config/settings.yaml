@@ -1,6 +1,6 @@
 # ==============================================================================
 # BẢNG ĐIỀU KHUYỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0 - Tích hợp MathML)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.2 - Academic & Table Engine)
 # Kiến trúc: Separation of Concerns (SoC) - Configuration Layer
 # ==============================================================================
 
@@ -63,7 +63,7 @@ document_layout:
   margin: "20mm"
   
   # Quy tắc bẻ dòng tự động cho khối mã nguồn vượt quá độ rộng trang in
-  code_overflow_handling: "break-all"
+  code_overflow_handling: "break-word"
 
 # 6. CẤU HÌNH MỸ THUẬT CHỮ VÀ PHÔNG CHỮ HỆ THỐNG (TYPOGRAPHY CONFIGURATION)
 # Bộ phông chữ phòng thủ chống lỗi hiển thị, vỡ font, bóp mỏng chữ Tiếng Việt trên Windows 11
@@ -94,13 +94,14 @@ heading_numbering_system:
   h1_numbering_style: "roman"
   
   # Định dạng đánh số cho tiêu đề Cấp con (H2, H3, H4)
+  # Giới hạn ở cấp 4 để tránh chuỗi số quá dài (e.g., 1.1.1.1.1) theo chuẩn APA/IEEE
   # Giá trị chấp nhận: "decimal" (Phân cấp tự nhiên: 1.1, 1.2, 1.1.1) hoặc "none" (Không đánh số cấp con)
   sub_heading_numbering_style: "decimal"
   
   # Ký tự phân cách giữa chỉ số thứ tự và nội dung tiêu đề
   number_separator: ". "
 
-# 8. CẤU HÌNH ĐỘNG CƠ DỊCH THUẬT TOÁN HỌC (MATH RENDERING SYSTEM - NEW v1.2.0)
+# 8. CẤU HÌNH ĐỘNG CƠ DỊCH THUẬT TOÁN HỌC (MATH RENDERING SYSTEM)
 # Điều khiển tính năng nhận diện và chuyển đổi công thức LaTeX sang MathML/SVG
 math_rendering_system:
   # Cờ bật/tắt chính cho toàn bộ luồng xử lý toán học (True: Bật, False: Tắt)
@@ -108,3 +109,35 @@ math_rendering_system:
   
   # Chế độ tự động hạ cấp an toàn: Nếu chuỗi LaTeX bị lỗi cú pháp, trả về văn bản gốc thay vì làm sập chương trình
   fallback_to_raw_on_error: true
+
+# 9. CẤU HÌNH ĐỘNG CƠ XỬ LÝ BẢNG BIỂU GFM (TABLE RENDERING SYSTEM)
+# Điều khiển tính năng phân tích cú pháp bảng Markdown và quản lý tràn viền vật lý
+table_rendering_system:
+  # Kích hoạt bộ phân tích bảng biểu GFM trong AST Parser (True: Bật, False: Tắt)
+  enable_gfm_tables: true
+  
+  # Chiến lược xử lý khi bảng biểu vượt quá độ rộng vùng in A4
+  # Giá trị chấp nhận: "clip_and_warn" (Cắt bỏ phần thừa tràn ngang và xuất cảnh báo ra Terminal)
+  overflow_strategy: "clip_and_warn"
+  
+  # Tự động lặp lại hàng tiêu đề của bảng (Table Header) khi bảng bị ngắt sang trang mới
+  repeat_header_on_page_break: true
+  
+  # Ngưỡng độ rộng chiều ngang tối đa của vùng in A4 (tính bằng mm) dùng để kích hoạt cảnh báo
+  max_printable_width_mm: 170
+
+# 10. MA TRẬN QUY CHUẨN IN ẤN HỌC THUẬT (ACADEMIC STANDARDS PROFILE)
+# Định hình phong cách trình bày văn bản theo các tiêu chuẩn xuất bản quốc tế
+academic_standards_profile:
+  # Tiêu chuẩn học thuật đang kích hoạt
+  # Giá trị chấp nhận: "none" (Mặc định), "apa" (APA 7th), "ieee" (IEEE), "harvard" (Harvard)
+  active_standard: "apa"
+  
+  # Bật tính năng chống dòng mồ côi (Orphans) và dòng góa phụ (Widows)
+  # Đảm bảo không có dòng văn bản đơn lẻ trơ trọi ở đầu hoặc cuối trang in
+  prevent_orphans_and_widows: true
+  
+  # Quy tắc ngắt trang cho khối mã nguồn và bảng biểu
+  # Giá trị chấp nhận: "avoid" (Ngăn ngắt trang giữa khối), "auto" (Cho phép ngắt tự nhiên)
+  code_block_page_break_inside: "avoid"
+  table_page_break_inside: "avoid"

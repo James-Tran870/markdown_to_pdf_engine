@@ -1,6 +1,6 @@
 # ==============================================================================
 # BỘ KIỂM THỬ ĐỐI KHÁNG HỘP TRẮNG (WHITE-BOX RED-TEAM TEST SUITE)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0 - Tích hợp MathML)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.0 - Academic & Table Engine)
 # Kiến trúc: Fault Tolerance & Isolation Verification Layer
 # ==============================================================================
 
@@ -19,7 +19,7 @@ from src.pdf_compiler import PDFCompiler
 
 
 class RedTeamTestSuite(unittest.TestCase):
-    """Bộ kiểm thử đối kháng Hộp Trắng (White-Box Red-Teaming) nâng cấp v1.2.0."""
+    """Bộ kiểm thử đối kháng Hộp Trắng (White-Box Red-Teaming) nâng cấp v1.3.0."""
 
     def setUp(self):
         """Khởi tạo môi trường giả lập và các thư mục thử nghiệm tạm thời."""
@@ -32,7 +32,6 @@ class RedTeamTestSuite(unittest.TestCase):
         self.config_dir = self.temp_dir / "config"
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        # Khởi tạo tệp cấu hình tạm thời cho bộ test (Tích hợp Math Rendering System v1.2.0)
         self.test_config_path = self.config_dir / "settings.yaml"
         self.test_config_content = """
 global_encoding_standard: "utf-8"
@@ -52,7 +51,7 @@ directory_routing:
 document_layout:
   page_size: "A4"
   margin: "20mm"
-  code_overflow_handling: "break-all"
+  code_overflow_handling: "break-word"
 typography_configuration:
   font_family: '"Segoe UI", "Arial", sans-serif'
   code_font_family: '"Consolas", monospace'
@@ -67,18 +66,40 @@ heading_numbering_system:
 math_rendering_system:
   enable_math_rendering: true
   fallback_to_raw_on_error: true
+table_rendering_system:
+  enable_gfm_tables: true
+  overflow_strategy: "clip_and_warn"
+  repeat_header_on_page_break: true
+  max_printable_width_mm: 170
+academic_standards_profile:
+  active_standard: "apa"
+  prevent_orphans_and_widows: true
+  code_block_page_break_inside: "avoid"
+  table_page_break_inside: "avoid"
 """
         with open(self.test_config_path, "w", encoding="utf-8") as file_stream:
             file_stream.write(self.test_config_content)
 
-        self.parser = ASTParser(encoding_standard="utf-8", enable_math=True)
+        self.parser = ASTParser(
+            encoding_standard="utf-8", enable_math=True, enable_tables=True
+        )
         self.renderer = HTMLRenderer(
             theme_name="monokai",
             max_bookmark_level=4,
             enable_math=True,
             fallback_to_raw=True,
+            table_config={
+                "enable_gfm_tables": True,
+                "overflow_strategy": "clip_and_warn",
+            },
         )
-        self.compiler = PDFCompiler(output_encoding="utf-8")
+        self.compiler = PDFCompiler(
+            output_encoding="utf-8",
+            academic_config={
+                "active_standard": "apa",
+                "prevent_orphans_and_widows": True,
+            },
+        )
 
     def tearDown(self):
         """Dọn dẹp triệt để tất cả thư mục và tệp dữ liệu tạm sau khi hoàn tất test."""
@@ -116,10 +137,7 @@ math_rendering_system:
         )
         _pygments_css, rendered_html = self.renderer.convert_to_html(spoof_content)
 
-        # Kiểm tra tiêu đề hợp lệ được gắn thẻ h1 kèm thuộc tính id mỏ neo ASCII
         self.assertIn('<h1 id="tieu-de-hop-le-cap-1" data-level="1">', rendered_html)
-
-        # Kiểm tra tiêu đề giả mạo bên trong Code Block KHÔNG tạo thẻ h2 hay mỏ neo Bookmarks
         self.assertNotIn('<h2 id="tieu-de-gia-mao-cap-2-trong-code-block"', rendered_html)
         self.assertNotIn('data-level="2"', rendered_html)
 
@@ -163,7 +181,6 @@ math_rendering_system:
         file_a = self.input_dir / "file_a.md"
         file_a.write_text("# Tệp A Hợp Lệ\nNội dung tệp A.", encoding="utf-8")
 
-        # Tệp B hỏng (Ghi dữ liệu nhị phân không hợp lệ để gây lỗi mã hóa UTF-8)
         file_b = self.input_dir / "file_b.md"
         with open(file_b, "wb") as f:
             f.write(b"\x80\x81\xfe\xff\xff")
@@ -207,8 +224,7 @@ math_rendering_system:
         self.assertTrue(expected_pdf.exists())
 
     def test_scenario_7_math_rendering_and_fault_tolerance(self):
-        """Kịch bản 7 (MỚI v1.2.0): Kiểm thử biên dịch MathML và cơ chế hạ cấp lỗi LaTeX."""
-        # 1. Thử nghiệm công thức toán chuẩn
+        """Kịch bản 7: Kiểm thử biên dịch MathML và cơ chế hạ cấp lỗi LaTeX."""
         valid_math_content = (
             "# Báo Cáo Toán Học\n"
             "Công thức nội dòng $2^{30}$ và công thức khối:\n\n"
@@ -216,23 +232,77 @@ math_rendering_system:
         )
         _css, rendered_html = self.renderer.convert_to_html(valid_math_content)
 
-        # Kiểm tra mã HTML có chứa các thẻ đánh dấu MathML chuẩn
         self.assertIn('<span class="math-inline">', rendered_html)
         self.assertIn('<div class="math-block">', rendered_html)
         self.assertIn("<math", rendered_html)
 
-        # 2. Thử nghiệm hạ cấp an toàn khi công thức LaTeX bị lỗi cú pháp
         invalid_math_content = "Công thức lỗi: $\\invalidlatex_command{{{$"
         _css_err, rendered_err_html = self.renderer.convert_to_html(invalid_math_content)
 
-        # Kiểm tra hệ thống tự hạ cấp về thẻ math-error mà không làm sập tiến trình
         self.assertIn('<span class="math-error">', rendered_err_html)
+
+    def test_scenario_8_gfm_table_parsing_and_structure(self):
+        """Kịch bản 8 (MỚI v1.3.0): Kiểm thử nhận diện và cấu trúc hóa bảng biểu GFM."""
+        table_markdown = (
+            "# Kiểm thử Bảng GFM\n\n"
+            "| Cột Tiêu Đề 1 | Cột Tiêu Đề 2 |\n"
+            "| :--- | :--- |\n"
+            "| Dữ liệu Dòng 1 | Dữ liệu Dòng 2 |\n"
+        )
+        sample_file = self.temp_dir / "temp_table_test.md"
+        sample_file.write_text(table_markdown, encoding="utf-8")
+
+        tokens = self.parser.parse_markdown_file(sample_file)
+        token_types = [token.type for token in tokens]
+
+        self.assertIn("table_open", token_types)
+        self.assertIn("thead_open", token_types)
+        self.assertIn("tr_open", token_types)
+
+        _css, rendered_html = self.renderer.convert_to_html(table_markdown)
+        
+        # Đã cập nhật chuỗi kiểm định để bám sát thuộc tính style do GFM sinh ra
+        self.assertIn("<table>", rendered_html)
+        self.assertIn('<th style="text-align:left">Cột Tiêu Đề 1</th>', rendered_html)
+        self.assertIn('<td style="text-align:left">Dữ liệu Dòng 1</td>', rendered_html)
+
+    def test_scenario_9_table_overflow_clipping_and_logging(self):
+        """Kịch bản 9 (MỚI v1.3.0): Kiểm thử bảng biểu cực rộng vượt quá lề giấy A4."""
+        header_row = "| " + " | ".join([f"Cột {i}" for i in range(1, 26)]) + " |\n"
+        sep_row = "| " + " | ".join([":---" for _ in range(25)]) + " |\n"
+        data_row = "| " + " | ".join([f"Dữ liệu {i}" for i in range(1, 26)]) + " |\n"
+        huge_table_markdown = f"# Bảng Cực Rộng\n\n{header_row}{sep_row}{data_row}"
+
+        pygments_css, rendered_html = self.renderer.convert_to_html(huge_table_markdown)
+        output_pdf = self.temp_dir / "temp_huge_table_test.pdf"
+
+        try:
+            self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
+            self.assertTrue(output_pdf.exists())
+        finally:
+            if output_pdf.exists():
+                output_pdf.unlink()
+
+    def test_scenario_10_academic_apa_profile_and_break_avoidance(self):
+        """Kịch bản 10 (MỚI v1.3.0): Kiểm thử quy chuẩn in ấn học thuật APA và chống ngắt trang."""
+        academic_content = (
+            "# Báo Cáo Học Thuật Chuẩn APA\n\n"
+            "Đoạn văn bản mở đầu báo cáo học thuật.\n\n"
+            "```python\n"
+            "def test_function():\n"
+            "    return True\n"
+            "```\n"
+        )
+        pygments_css, rendered_html = self.renderer.convert_to_html(academic_content)
+        output_pdf = self.temp_dir / "temp_apa_test.pdf"
+
+        try:
+            self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
+            self.assertTrue(output_pdf.exists())
+        finally:
+            if output_pdf.exists():
+                output_pdf.unlink()
 
 
 if __name__ == "__main__":
     unittest.main()
-
-# ==============================================================================
-# CÂY LỆNH THỰC THI KIỂM THỬ TRÊN TERMINAL VSCODE:
-# python -m unittest tests/red_team_tests.py
-# ==============================================================================

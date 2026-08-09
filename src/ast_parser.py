@@ -1,6 +1,6 @@
 # ==============================================================================
 # BỘ PHÂN TÍCH CÂY CÚ PHÁP TRỪU TƯỢNG (AST PARSER MODULE)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0 - Tích hợp Math Plugin)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.0 - Tích hợp GFM Tables & Math)
 # Kiến trúc: Defensive Programming & Isolation Layer
 # ==============================================================================
 
@@ -10,28 +10,40 @@ from markdown_it import MarkdownIt
 
 
 class ASTParser:
-    """Bộ phân tích Cây Cú Pháp Trừu Tượng (AST) phòng thủ hỗ trợ nhận diện Toán học."""
+    """Bộ phân tích Cây Cú Pháp Trừu Tượng (AST) phòng thủ hỗ trợ nhận diện Toán học và Bảng biểu GFM."""
 
-    def __init__(self, encoding_standard: str = "utf-8", enable_math: bool = True):
-        """Khởi tạo động cơ phân tích AST với chuẩn mã hóa cưỡng chế và bộ lọc toán học.
+    def __init__(
+        self,
+        encoding_standard: str = "utf-8",
+        enable_math: bool = True,
+        enable_tables: bool = True,
+    ):
+        """Khởi tạo động cơ phân tích AST với chuẩn mã hóa cưỡng chế, bộ lọc toán học và cảm biến bảng biểu.
 
         Args:
             encoding_standard (str): Chuẩn mã hóa luồng I/O (mặc định 'utf-8').
-            enable_math (bool): Cờ bật/tắt tính năng nhận diện ký hiệu toán học TeX.
+            enable_math (bool): Cờ bật/tắt tính năng nhận diện ký hiệu toán học TeX ($/$$).
+            enable_tables (bool): Cờ bật/tắt tính năng nhận diện bảng biểu chuẩn GFM.
         """
         # 1. Cưỡng chế chuẩn mã hóa UTF-8 theo yêu cầu kiến trúc phòng thủ
         self.encoding_standard = encoding_standard
         self.enable_math = enable_math
+        self.enable_tables = enable_tables
 
-        # 2. Khởi tạo động cơ phân tích markdown-it-py chuẩn CommonMark
-        self.md_engine = MarkdownIt("commonmark")
+        # 2. Khởi tạo động cơ phân tích markdown-it-py dựa trên cờ cấu hình bảng biểu GFM
+        if self.enable_tables:
+            # Preset 'gfm-like' kích hoạt sẵn cảm biến phân tích bảng biểu (Tables), gạch ngang, autolink
+            self.md_engine = MarkdownIt("gfm-like")
+        else:
+            # Quay về preset 'commonmark' thuần túy không hỗ trợ bảng biểu
+            self.md_engine = MarkdownIt("commonmark")
 
         # 3. Lắp đặt "Bộ Ống Kính X-Quang" (Plugin Toán học) nếu cờ cấu hình bật
         if self.enable_math:
             self._register_math_plugin()
 
     def _register_math_plugin(self) -> None:
-        """Đăng ký plugin texmath để nhận diện ranh giới ký tự $ và $$."""
+        """Đăng ký plugin texmath để nhận diện ranh giới ký tự $ (inline) và $$ (block)."""
         try:
             from mdit_py_plugins.texmath import texmath_plugin
 
@@ -51,7 +63,7 @@ class ASTParser:
             file_path (Path): Đường dẫn tuyệt đối hoặc tương đối tới tệp Markdown đầu vào.
 
         Returns:
-            list: Danh sách các đối tượng Token chứa thông tin phân rã cấu trúc.
+            list: Danh sách các đối tượng Token chứa thông tin phân rã cấu trúc (Bao gồm cả Token bảng biểu).
 
         Raises:
             FileNotFoundError: Khi tệp đầu vào không tồn tại trên đĩa cứng.
@@ -67,7 +79,7 @@ class ASTParser:
             with open(file_path, "r", encoding=self.encoding_standard) as file_stream:
                 raw_text = file_stream.read()
 
-            # Phân rã văn bản thành chuỗi các đối tượng Token (Bao gồm cả các Nút toán học)
+            # Phân rã văn bản thành chuỗi các đối tượng Token (Bao gồm Nút toán học và Nút bảng biểu)
             tokens = self.md_engine.parse(raw_text)
             return tokens
         except UnicodeDecodeError as error:

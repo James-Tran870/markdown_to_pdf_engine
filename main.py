@@ -1,7 +1,5 @@
 # ==============================================================================
-# KỊCH BẢN ĐIỀU PHỐI VẬN HÀNH HÀNG LOẠT (MAIN PIPELINE COORDINATOR)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0 - Tích hợp MathML)
-# Kiến trúc: Defensive Programming & Separation of Concerns (SoC)
+# TỆP 1: main.py (MÃ NGUỒN BỘ ĐIỀU PHỐI ĐÃ TỐI ƯU BẢO TỒN LUỒNG TRUYỀN)
 # ==============================================================================
 
 import sys
@@ -70,38 +68,46 @@ def execute_single_file_pipeline(
         max_bookmark_level = heading_config.get("max_bookmark_level", 4)
         numbering_config = config.get("heading_numbering_system", {})
 
-        # MỞ RỘNG v1.2.0: Trích xuất khối cấu hình động cơ dịch thuật toán học
+        # 2. Trích xuất khối cấu hình động cơ toán học (v1.2.0)
         math_config = config.get("math_rendering_system", {})
         enable_math = math_config.get("enable_math_rendering", True)
         fallback_to_raw = math_config.get("fallback_to_raw_on_error", True)
 
-        # 2. Khởi tạo và nạp tệp qua bộ phân tích AST (Truyền cờ enable_math)
+        # 3. Trích xuất khối cấu hình động cơ xử lý bảng biểu GFM và học thuật (v1.3.0)
+        table_config = config.get("table_rendering_system", {})
+        enable_tables = table_config.get("enable_gfm_tables", True)
+        academic_config = config.get("academic_standards_profile", {})
+
+        # 4. Khởi tạo và nạp tệp qua bộ phân tích AST
         parser = ASTParser(
             encoding_standard=encoding_standard,
             enable_math=enable_math,
+            enable_tables=enable_tables,
         )
         _ast_tokens = parser.parse_markdown_file(input_md_path)
 
-        # 3. Đọc nội dung văn bản thô theo chuẩn UTF-8 cưỡng chế
+        # 5. Đọc nội dung văn bản thô theo chuẩn UTF-8 cưỡng chế
         with open(input_md_path, "r", encoding=encoding_standard) as file_stream:
             markdown_text = file_stream.read()
 
-        # 4. Kết xuất mã HTML ngữ nghĩa (Truyền cờ enable_math và fallback_to_raw)
+        # 6. Kết xuất mã HTML ngữ nghĩa (Truyền table_config tiếp nhận v1.3.0)
         renderer = HTMLRenderer(
             theme_name=theme_profile,
             max_bookmark_level=max_bookmark_level,
             enable_math=enable_math,
             fallback_to_raw=fallback_to_raw,
+            table_config=table_config,
         )
         pygments_css, rendered_html = renderer.convert_to_html(markdown_text)
 
-        # 5. Đảm bảo thư mục cha của tệp đầu ra đã được tạo
+        # 7. Đảm bảo thư mục cha của tệp đầu ra đã được tạo
         output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 6. Biên dịch Paged Media CSS và xuất tệp PDF hoàn chỉnh
+        # 8. Biên dịch Paged Media CSS và xuất tệp PDF (Truyền academic_config tiếp nhận v1.3.0)
         compiler = PDFCompiler(
             output_encoding=encoding_standard,
             numbering_config=numbering_config,
+            academic_config=academic_config,
         )
         compiler.compile_to_pdf(
             html_content=rendered_html,
@@ -126,9 +132,8 @@ def execute_single_file_pipeline(
 
 def batch_process_directory(base_directory: Path) -> None:
     """Động cơ điều phối quét hàng loạt và phân loại tài liệu tự động."""
-    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (BATCH PROCESSING v1.2.0) ===")
+    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (BATCH PROCESSING v1.3.0) ===")
 
-    # 1. Nạp tệp cấu hình hệ thống
     config_path = base_directory / "config" / "settings.yaml"
     config = load_configuration(config_path)
 
@@ -146,18 +151,15 @@ def batch_process_directory(base_directory: Path) -> None:
     input_dir = base_directory / input_dir_name
     output_dir = base_directory / output_dir_name
 
-    # 2. Đảm bảo các thư mục đầu vào và đầu ra đã sẵn sàng
     ensure_directories_exist(
         input_dir=input_dir, output_dir=output_dir, auto_create=auto_create_dirs
     )
 
-    # 3. Thu gom danh sách toàn bộ các tệp cần xử lý
     if recursive_search:
         all_candidate_files = [path for path in input_dir.rglob("*") if path.is_file()]
     else:
         all_candidate_files = [path for path in input_dir.glob("*") if path.is_file()]
 
-    # Lọc danh sách chỉ giữ lại các tệp có đuôi mở rộng hợp lệ
     target_files = [
         file_path
         for file_path in all_candidate_files
@@ -167,9 +169,6 @@ def batch_process_directory(base_directory: Path) -> None:
     if not target_files:
         print(
             f"[THÔNG_BÁO] Thư mục '{input_dir_name}' không chứa tệp Markdown hợp lệ nào."
-        )
-        print(
-            f"[HƯỚNG_DẪN] Hãy chép các tệp {list(allowed_extensions)} vào thư mục '{input_dir}' và thực thi lại."
         )
         return
 
@@ -181,7 +180,6 @@ def batch_process_directory(base_directory: Path) -> None:
     failure_count = 0
     skipped_count = 0
 
-    # 4. Duyệt qua từng tệp để đẩy qua băng tải chuyển đổi
     for index, input_file_path in enumerate(target_files, start=1):
         if preserve_subfolder:
             relative_path = input_file_path.relative_to(input_dir)
@@ -216,7 +214,6 @@ def batch_process_directory(base_directory: Path) -> None:
         else:
             failure_count += 1
 
-    # 5. In báo cáo tổng kết tiến trình vận hành
     print("\n================ TỔNG KẾT TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT ================")
     print(f"- Tổng số tệp phát hiện : {len(target_files)}")
     print(f"- Biên dịch thành công : {success_count}")

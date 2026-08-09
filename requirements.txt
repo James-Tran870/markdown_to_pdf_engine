@@ -1,6 +1,6 @@
 # ==============================================================================
 # BẢNG KÊ VẬT TƯ PHỤ THUỘC (REQUIREMENTS SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.2.0)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.3.0 - Academic & Table Engine)
 # ==============================================================================
 
 # 1. THƯ VIỆN NỀN TẢNG HIỆN CÓ
@@ -13,3 +13,6 @@ pyyaml>=6.0.1
 mdit-py-plugins>=0.4.0
 latex2mathml>=3.77.0
 
+# 3. THƯ VIỆN BỔ SUNG CHO ĐỘNG CƠ GFM VÀ BẢNG BIỂU (MỚI v1.3.0)
+# Bắt buộc đi kèm khi kích hoạt preset "gfm-like" trong ASTParser
+linkify-it-py>=2.0.0
