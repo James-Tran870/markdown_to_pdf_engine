@@ -1,57 +1,24 @@
 # ==============================================================================
-# TỆP LOẠI TRỪ GIT (GITIGNORE SCHEMA)
-# Dự án: markdown_to_pdf_engine
+# BẢO VỆ DỮ LIỆU CÁ NHÂN & CÔ LẬP LUỒNG I/O (INPUT & OUTPUT ISOLATION v1.4.3)
 # ==============================================================================
 
-# 1. BỘ NHỚ ĐỆM VÀ TỆP TRÌNH THÔNG DỊCH PYTHON (PYTHON CACHE)
-__pycache__/
-*.py[cod]
-*$py.class
-.Python
+# 1. KHÓA TOÀN BỘ DỮ LIỆU ĐẦU VÀO (Giữ lại tệp giữ chỗ cấu trúc và tệp mẫu)
+input/*
+!input/.gitkeep
+!input/input_sample.md
 
-# 2. MÔI TRƯỜNG ẢO (VIRTUAL ENVIRONMENTS)
-# Bỏ qua thư mục venv/ chứa hàng ngàn tệp thư viện nặng
+# 2. KHÓA TOÀN BỘ SẢN PHẨM ĐẦU RA (Giữ lại tệp giữ chỗ cấu trúc)
+output/*
+!output/.gitkeep
+
+# 3. CÔ LẬP WORKSPACE KIỂM THỬ RED-TEAM VÀ TỆP TẠM CHROMIUM
+temp_redteam_workspace/
+*.temp.html
+*.css.tmp
+
+# 4. MÔI TRƯỜNG ẢO VÀ BỘ NHỚ ĐỆM TRÌNH DUYỆT PLAYWRIGHT
 venv/
 .venv/
-env/
-ENV/
-
-# 3. DỮ LIỆU ĐẦU VÀO VÀ THÀNH PHẨM PDF (LOCAL I/O DATA)
-# Bỏ qua các tệp PDF thành phẩm và dữ liệu thử nghiệm cá nhân
-output/*.pdf
-temp_redteam_workspace/
-
-# 4. TỆP CẤU HÌNH VÀ BỘ NHỚ TẠM CỦA TRÌNH BIÊN TẬP (IDE & OS GARBAGE)
-.vscode/*
-!.vscode/settings.json
-.idea/
-*.swp
-*.tmp
-
-# Tệp rác tự động của hệ điều hành Windows
-Thumbs.db
-Desktop.ini
-
-# ==============================================================================
-# 5. TỆP TRUNG GIAN DỤNG CỤ BIÊN DỊCH (RENDER & AST INTERMEDIATE ARTIFACTS)
-# Bỏ qua tệp HTML/CSS phôi tạm do markdown-it-py/WeasyPrint sinh ra
-*.html
-*.css.tmp
-temp/
-build/
-dist/
-
-# 6. NHẬT KÝ VẬN HÀNH VÀ BÁO CÁO KIỂM THỬ (RED-TEAM LOGS & STRESS TEST)
-# Bỏ qua nhật ký rò rỉ UTF-8 và kết quả thử nghiệm tràn viền
-*.log
-logs/
-redteam_reports/
-*.stacktrace
-
-# 7. CẤU HÌNH LOCAL VÀ DỮ LIỆU THỬ NGHIỆM CÁ NHÂN (LOCAL CONFIG & TEST INPUTS)
-# Giữ lại input/input_sample.md, loại trừ các file test cá nhân trong thư mục input
-.env
-config.local.yaml
-input/*
-!input/input_sample.md
-!input/.gitkeep
+.playwright/
+ms-playwright/
+__pycache__/
