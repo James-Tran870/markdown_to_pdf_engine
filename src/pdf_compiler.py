@@ -1,7 +1,7 @@
 # ==============================================================================
-# BỘ BIÊN DỊCH PDF VÀ ĐỊNH DẠNG PAGED MEDIA (PDF COMPILER MODULE v1.5.0)
+# BỘ BIÊN DỊCH PDF VÀ ĐỊNH DẠNG PAGED MEDIA (PDF COMPILER MODULE v1.6.0)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Ephemeral File System, Playwright CDP Synchronization & Isolation Layer
+# Kiến trúc: Ephemeral Memory, Security Sandbox & CSS Counter Decoupling
 # ==============================================================================
 
 import tempfile
@@ -35,7 +35,7 @@ class PDFCompiler:
         }
 
     def _generate_css_counters(self) -> str:
-        """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề."""
+        """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề (Tối đa Cấp 4 theo APA)."""
         enable_auto = self.numbering_config.get("enable_auto_numbering", True)
         if not enable_auto:
             return ""
@@ -89,7 +89,7 @@ class PDFCompiler:
         """
 
     def _build_paged_media_css(self, pygments_css: str) -> str:
-        """Tạo lập bộ CSS Paged Media hoàn chỉnh bao bọc toàn bộ quy chuẩn in ấn."""
+        """Tạo lập bộ CSS Paged Media hoàn chỉnh bao bọc toàn bộ quy chuẩn in ấn và Typography."""
         dynamic_counters_css = self._generate_css_counters()
 
         prevent_orphans = self.academic_config.get("prevent_orphans_and_widows", True)
@@ -122,7 +122,7 @@ class PDFCompiler:
 
         /* ================================================================== */
         /* CẤU HÌNH TYPOGRAPHY TIÊU ĐỀ CHUẨN APA / IEEE (HEADING STYLING)     */
-        /* Cưỡng chế BOLD & LEFT-ALIGN toàn bộ từ H1-H6                       */
+        /* Cưỡng chế BOLD & LEFT-ALIGN cho H1-H6, độc lập hoàn toàn với Bookmark */
         /* ================================================================== */
         h1, h2, h3, h4, h5, h6 {{
             text-align: left !important;
@@ -133,15 +133,14 @@ class PDFCompiler:
             margin-top: 1.2em;
             margin-bottom: 0.6em;
             word-spacing: normal;
-            bookmark-label: content();
             page-break-after: avoid;
             break-after: avoid;
         }}
 
-        h1 {{ bookmark-level: 1; font-size: 20pt; }}
-        h2 {{ bookmark-level: 2; font-size: 15pt; }}
-        h3 {{ bookmark-level: 3; font-size: 13pt; }}
-        h4 {{ bookmark-level: 4; font-size: 11pt; }}
+        h1 {{ font-size: 20pt; }}
+        h2 {{ font-size: 15pt; }}
+        h3 {{ font-size: 13pt; }}
+        h4 {{ font-size: 11pt; }}
         
         h5 {{ 
             font-size: 11pt !important; 
@@ -287,13 +286,9 @@ class PDFCompiler:
 
         try:
             with sync_playwright() as p:
+                # KHIÊN AN NINH v1.6.0: Gỡ bỏ hoàn toàn bộ 3 cờ hạ bảo mật (--disable-web-security, --allow-file-access-from-files, --no-sandbox)
                 browser = p.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--disable-web-security",
-                        "--allow-file-access-from-files",
-                        "--no-sandbox",
-                    ],
+                    headless=True
                 )
                 page = browser.new_page()
 

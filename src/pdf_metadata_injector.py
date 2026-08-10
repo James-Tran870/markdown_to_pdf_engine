@@ -1,7 +1,7 @@
 # ==============================================================================
-# LỚP TIÊM SIÊU DỮ LIỆU HẬU KỲ (POST-PROCESSING METADATA INJECTOR v1.5.1)
+# LỚP TIÊM SIÊU DỮ LIỆU HẬU KỲ (POST-PROCESSING METADATA INJECTOR v1.6.0)
 # Đường dẫn: src/pdf_metadata_injector.py
-# Kiến trúc: Forward Search Heuristic, Binary Outline Injection & Strict Exception
+# Kiến trúc: Forward Search Heuristic, Binary Outline Injection & Level-6 Depth Support
 # ==============================================================================
 
 import re
@@ -13,8 +13,8 @@ import fitz  # PyMuPDF
 class MetadataInjector:
     """Bộ động cơ can thiệp nhị phân, trích xuất cấu trúc Heading và tiêm Bookmarks vào PDF."""
 
-    def __init__(self, max_bookmark_level: int = 4):
-        """Khởi tạo cấu hình nội suy với giới hạn chiều sâu phân cấp Bookmark."""
+    def __init__(self, max_bookmark_level: int = 6):
+        """Khởi tạo cấu hình nội suy với giới hạn chiều sâu phân cấp Bookmark (Default: Level 6)."""
         self.max_bookmark_level = max_bookmark_level
 
     def _extract_headings_from_html(self, html_content: str) -> list[tuple[int, str]]:
@@ -38,7 +38,7 @@ class MetadataInjector:
             except ValueError:
                 continue
 
-            # Rào chắn độ sâu cấu trúc theo cấu hình YAML
+            # Rào chắn độ sâu cấu trúc theo cấu hình YAML (Mở rộng hỗ trợ đến Cấp 6)
             if level <= self.max_bookmark_level:
                 # Dọn dẹp các thẻ HTML nội dòng (<code>, <em>, <span class="math-tex">)
                 clean_text = re.sub(r"<[^>]+>", "", raw_text).strip()

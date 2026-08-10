@@ -1,7 +1,7 @@
 # ==============================================================================
-# TỆP LOẠI TRỪ GIT (GITIGNORE SCHEMA v1.5.3)
+# TỆP LOẠI TRỪ GIT (GITIGNORE SCHEMA v1.6.0)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Strict I/O Isolation, Privacy Protection & Red-Team Containment
+# Kiến trúc: Strict I/O Isolation, Privacy Protection & Total Input Blocking
 # ==============================================================================
 
 # 1. BỘ NHỚ ĐỆM TRÌNH THÔNG DỊCH VÀ BỘ KIỂM TRA TĨNH (PYTHON & RUFF CACHE)
@@ -21,11 +21,10 @@ ENV/
 .playwright/
 ms-playwright/
 
-# 3. KHO NGUYÊN LIỆU ĐẦU VÀO VÀ THÀNH PHẨM PDF (LOCAL I/O ISOLATION)
-# Chặn hoàn bộ dữ liệu cá nhân, chỉ giữ lại tệp giữ cấu trúc thư mục và tệp mẫu
+# 3. KHO NGUYÊN LIỆU ĐẦU VÀO VÀ THÀNH PHẨM PDF (LOCAL I/O ISOLATION & PRIVACY)
+# NÂNG CẤP v1.6.0: Chặn tuyệt đối 100% toàn bộ tệp trong input/, chỉ giữ lại .gitkeep để bảo tồn cây thư mục
 input/*
 !input/.gitkeep
-!input/input_sample.md
 
 output/*
 !output/.gitkeep

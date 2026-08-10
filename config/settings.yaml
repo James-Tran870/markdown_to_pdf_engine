@@ -1,6 +1,6 @@
 # ==============================================================================
 # BẢNG ĐIỀU KHUYỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.0 - Playwright & KaTeX Engine)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.6.0 - Expanded Bookmark Depth & Dynamic Routing)
 # Kiến trúc: Separation of Concerns (SoC) - Configuration Layer
 # ==============================================================================
 
@@ -25,8 +25,9 @@ directory_routing:
 syntax_highlighting_profile: "monokai"
 
 # 4. GIỚI HẠN ĐỘ SÂU DẤU TRANG TIÊU ĐỀ (HEADING RETENTION & ANCHORS)
+# NÂNG CẤP v1.6.0: Mở rộng max_bookmark_level lên cấp 6 để tiêm trọn vẹn Cây Mục lục (Outline)
 heading_retention_depth:
-  max_bookmark_level: 4
+  max_bookmark_level: 6
   enable_heading_anchors: true
   normalize_anchor_ascii: true
 
@@ -51,7 +52,7 @@ heading_numbering_system:
   sub_heading_numbering_style: "decimal"
   number_separator: ". "
 
-# 8. ĐIỀU HƯỚNG TRÌNH DUYỆT KHÔNG ĐẦU (HEADLESS BROWSER ENGINE - MỚI v1.4.0)
+# 8. ĐIỀU HƯỚNG TRÌNH DUYỆT KHÔNG ĐẦU (HEADLESS BROWSER ENGINE)
 # Quản lý vòng đời và tham số kết xuất trang in PDF của Playwright Chromium
 headless_browser_engine:
   # Chủng loại trình duyệt thực thi (Chỉ chấp nhận: "chromium")
@@ -73,7 +74,7 @@ headless_browser_engine:
   # Ưu tiên sử dụng kích thước trang in khai báo trong CSS @page thay vì tham số mặc định
   prefer_css_page_size: true
 
-# 9. BỘ KẾT XUẤT TOÁN HỌC KATEX OFFLINE (KATEX OFFLINE CONFIG - MỚI v1.4.0)
+# 9. BỘ KẾT XUẤT TOÁN HỌC KATEX OFFLINE (KATEX OFFLINE CONFIG)
 # Cấu hình tài nguyên JS/CSS nội bộ để biên dịch 100% vĩ lệnh LaTeX không cần Internet
 katex_offline_config:
   # Cờ bật/tắt chính cho động cơ kết xuất toán học KaTeX

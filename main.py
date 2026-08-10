@@ -1,7 +1,7 @@
 # ==============================================================================
-# TỆP: main.py (BỘ ĐIỀU PHỐI PIPELINE, PYDANTIC DTO & METADATA INJECTOR v1.5.2)
+# TỆP: main.py (BỘ ĐIỀU PHỐI PIPELINE, PYDANTIC DTO & DYNAMIC UNPACKING v1.6.0)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Strict Schema Validation & Post-Processing Metadata Orchestration
+# Kiến trúc: Strict Schema Validation & Dynamic Sub-Schema Unpacking
 # ==============================================================================
 
 import sys
@@ -31,8 +31,8 @@ class DirectoryRoutingConfig(BaseModel):
 
 
 class HeadingRetentionDepthConfig(BaseModel):
-    """Lược đồ cấu hình độ sâu dấu trang tiêu đề với rào chắn cứng."""
-    max_bookmark_level: int = Field(default=4, ge=1, le=6)
+    """Lược đồ cấu hình độ sâu dấu trang tiêu đề với rào chắn cứng mở rộng cấp 6."""
+    max_bookmark_level: int = Field(default=6, ge=1, le=6)
     enable_heading_anchors: bool = True
     normalize_anchor_ascii: bool = True
 
@@ -210,11 +210,11 @@ def execute_single_file_pipeline(
         # 1. Truy xuất dữ liệu trực tiếp thông qua thuộc tính DTO
         encoding_standard = config.global_encoding_standard
         theme_profile = config.syntax_highlighting_profile
-        max_bookmark_level = config.heading_retention_depth.max_bookmark_level
         enable_math = config.katex_offline_config.enable_katex
         enable_tables = config.table_rendering_system.enable_gfm_tables
 
-        # 2. Khai báo Dictionary chuyển giao hạ nguồn cho các Module
+        # 2. Khai báo Dictionary chuyển giao hạ nguồn cho các Module bằng toán tử model_dump()
+        retention_config = config.heading_retention_depth.model_dump()
         browser_config = config.headless_browser_engine.model_dump()
         katex_config = config.katex_offline_config.model_dump()
         table_config = config.table_rendering_system.model_dump()
@@ -234,9 +234,10 @@ def execute_single_file_pipeline(
             markdown_text = file_stream.read()
 
         # 5. Kết xuất mã HTML ngữ nghĩa (Giai đoạn 2)
+        # NÂNG CẤP: Truyền dẫn động toàn bộ Lược đồ con bằng **retention_config
         renderer = HTMLRenderer(
             theme_name=theme_profile,
-            max_bookmark_level=max_bookmark_level,
+            **retention_config,
             enable_math=enable_math,
             table_config=table_config,
             katex_config=katex_config,
@@ -261,7 +262,9 @@ def execute_single_file_pipeline(
 
         # 8. Tiêm Siêu Dữ Liệu Hậu Kỳ bằng PyMuPDF (Giai đoạn 4)
         print("    -> [ĐIỀU_PHỐI] Đang kích hoạt động cơ tiêm siêu dữ liệu Bookmarks...")
-        injector = MetadataInjector(max_bookmark_level=max_bookmark_level)
+        injector = MetadataInjector(
+            max_bookmark_level=config.heading_retention_depth.max_bookmark_level
+        )
         is_metadata_injected = injector.inject_metadata(
             pdf_path=output_pdf_path, 
             html_content=rendered_html
@@ -288,7 +291,7 @@ def execute_single_file_pipeline(
 
 def batch_process_directory(base_directory: Path) -> None:
     """Động cơ điều phối quét hàng loạt dựa trên Pydantic DTO Schema."""
-    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (PYDANTIC & METADATA INJECTOR v1.5.2) ===")
+    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (PYDANTIC DTO & DYNAMIC UNPACKING v1.6.0) ===")
 
     config_path = base_directory / "config" / "settings.yaml"
     config = load_configuration(config_path)

@@ -1,7 +1,7 @@
 # ==============================================================================
-# PHẦN 2: TỆP src/html_renderer.py (NÂNG CẤP BĂM MẬT MÃ SHA-256 v1.5.1)
-# Đường dẫn: src/html_renderer.py
-# Kiến trúc: Cryptographic Masking Pattern, UP012 Optimized & PEP 8 Compliant
+# TỆP: src/html_renderer.py (BỘ KẾT XUẤT HTML & INLINE ASSETS EMBEDDING v1.6.1)
+# Dự án: markdown_to_pdf_engine
+# Kiến trúc: Inline Asset Embedding, Dynamic Flag Interpolation & UP012 Optimized
 # ==============================================================================
 
 import hashlib
@@ -21,7 +21,10 @@ def _slugify_text(text: str) -> str:
     normalized_text = text.replace("đ", "d").replace("Đ", "D")
     unicode_decomp = unicodedata.normalize("NFD", normalized_text)
     ascii_bytes = unicode_decomp.encode("ascii", "ignore")
-    ascii_text = ascii_bytes.decode("utf-8")
+    
+    # KHẮC PHỤC RUFF UP012: Sử dụng .decode() mặc định thay vì .decode("utf-8")
+    ascii_text = ascii_bytes.decode()
+    
     clean_text = re.sub(r"[^\w\s-]", "", ascii_text.lower()).strip()
     clean_id = re.sub(r"[-\s]+", "-", clean_text)
     return clean_id
@@ -33,16 +36,20 @@ class HTMLRenderer:
     def __init__(
         self,
         theme_name: str = "monokai",
-        max_bookmark_level: int = 4,
+        max_bookmark_level: int = 6,
+        enable_heading_anchors: bool = True,
+        normalize_anchor_ascii: bool = True,
         enable_math: bool = True,
         fallback_to_raw: bool = True,
         table_config: dict | None = None,
         math_syntax_delimiters: list | None = None,
         katex_config: dict | None = None,
     ):
-        """Khởi tạo bộ kết xuất HTML với cấu hình giao diện, mỏ neo, bảng GFM và động cơ KaTeX Offline."""
+        """Khởi tạo bộ kết xuất HTML hỗ trợ giải nén DTO động từ AppConfig."""
         self.theme_name = theme_name
         self.max_bookmark_level = max_bookmark_level
+        self.enable_heading_anchors = enable_heading_anchors
+        self.normalize_anchor_ascii = normalize_anchor_ascii
         self.enable_math = enable_math
         self.fallback_to_raw = fallback_to_raw
         self.table_config = table_config or {}
@@ -93,11 +100,10 @@ class HTMLRenderer:
             block_counter += 1
             code_snippet = match.group(0)
 
-            # Triệt tiêu tham số "utf-8" thừa thãi theo khuyến nghị UP012 (Tối ưu hóa PEP 3120)
+            # KHẮC PHỤC RUFF UP012: Lược bỏ đối số "utf-8" thừa thãi, tận dụng luồng mã hóa C nội tại
             hash_input = f"salt_key_{block_counter}_{code_snippet}".encode()
             hash_signature = hashlib.sha256(hash_input).hexdigest()
 
-            # Mã định danh độc nhất không thể đoán trước (Cryptographic Placeholder)
             placeholder = f"__CRYPTO_MASK_{hash_signature[:16]}_{block_counter}__"
             code_blocks[placeholder] = code_snippet
             return placeholder
@@ -135,13 +141,19 @@ class HTMLRenderer:
         return highlight(code_content, lexer, formatter)
 
     def _render_heading_anchors(self, tokens, idx, options, env):
-        """Gắn thuộc tính id chuẩn hóa ASCII vào các thẻ tiêu đề để tạo mỏ neo."""
+        """Gắn thuộc tính id chuẩn hóa ASCII và data-level vào các thẻ tiêu đề để tạo mỏ neo."""
         token = tokens[idx]
         if token.nesting == 1:
             level = int(token.tag[1])
             title_text = tokens[idx + 1].content if (idx + 1) < len(tokens) else ""
-            clean_id = _slugify_text(title_text)
-            return f'<{token.tag} id="{clean_id}" data-level="{level}">'
+            
+            if self.enable_heading_anchors:
+                if self.normalize_anchor_ascii:
+                    clean_id = _slugify_text(title_text)
+                else:
+                    clean_id = title_text.strip().replace(" ", "-")
+                return f'<{token.tag} id="{clean_id}" data-level="{level}">'
+            return f'<{token.tag} data-level="{level}">'
         return f"</{token.tag}>\n"
 
     def _render_math_inline(self, tokens, idx, options, env):
@@ -165,31 +177,42 @@ class HTMLRenderer:
         return f'<div class="math-tex">$$\n{latex_content}\n$$</div>\n'
 
     def _generate_katex_assets_and_script(self) -> str:
-        """Tự động sinh khối thẻ <link> và <script> nạp tài nguyên KaTeX Offline cục bộ."""
+        """Đóng gói Nhúng Trực tiếp (Inline Embedding) CSS/JS KaTeX và Nội suy Cờ Logic động."""
         if not self.enable_math or not self.katex_config.get("enable_katex", True):
             return ""
 
         assets_dir = Path(
             self.katex_config.get("assets_dir", "assets/katex")
         ).resolve()
-        css_path = (
-            assets_dir / self.katex_config.get("css_filename", "katex.min.css")
-        ).as_uri()
-        js_path = (
-            assets_dir / self.katex_config.get("js_filename", "katex.min.js")
-        ).as_uri()
-        auto_render_path = (
-            assets_dir
-            / self.katex_config.get(
-                "auto_render_js_filename", "auto-render.min.js"
-            )
-        ).as_uri()
+        
+        css_file = assets_dir / self.katex_config.get("css_filename", "katex.min.css")
+        js_file = assets_dir / self.katex_config.get("js_filename", "katex.min.js")
+        auto_render_file = assets_dir / self.katex_config.get(
+            "auto_render_js_filename", "auto-render.min.js"
+        )
+
+        # Đọc trực tiếp nội dung thô của các tệp tĩnh dưới dạng chuỗi UTF-8
+        css_content = css_file.read_text(encoding="utf-8") if css_file.exists() else ""
+        js_content = js_file.read_text(encoding="utf-8") if js_file.exists() else ""
+        auto_render_content = (
+            auto_render_file.read_text(encoding="utf-8") if auto_render_file.exists() else ""
+        )
+
+        # Trích xuất biến boolean động và chuyển thành chuỗi JavaScript hợp lệ
+        strict_mode_str = str(self.katex_config.get("strict_mode", False)).lower()
+        throw_on_error_str = str(self.katex_config.get("throw_on_error", False)).lower()
 
         return f"""
-        <!-- KHỐI TÀI NGUYÊN KATEX OFFLINE VÀ SCRIPT TỰ ĐỘNG ĐÚC DOM -->
-        <link rel="stylesheet" href="{css_path}">
-        <script defer src="{js_path}"></script>
-        <script defer src="{auto_render_path}"></script>
+        <!-- KHỐI TÀI NGUYÊN KATEX OFFLINE BỌC TRỰC TIẾP NỘI TUYẾN (INLINE EMBEDDING v1.6.0) -->
+        <style>
+        {css_content}
+        </style>
+        <script>
+        {js_content}
+        </script>
+        <script>
+        {auto_render_content}
+        </script>
         <script>
             document.addEventListener("DOMContentLoaded", function() {{
                 if (typeof renderMathInElement === "function") {{
@@ -200,8 +223,8 @@ class HTMLRenderer:
                             {{left: '\\\\[', right: '\\\\]', display: true}},
                             {{left: '\\\\(', right: '\\\\)', display: false}}
                         ],
-                        strict: false,
-                        throwOnError: false,
+                        strict: {strict_mode_str},
+                        throwOnError: {throw_on_error_str},
                         trust: true
                     }});
                 }}
@@ -226,7 +249,7 @@ class HTMLRenderer:
         unified_text = self._unify_math_delimiters(markdown_text)
         rendered_html = self.md_engine.render(unified_text)
 
-        # 2. Tiêm khối tài nguyên và script kích hoạt KaTeX Offline vào cuối tệp HTML
+        # 2. Tiêm khối tài nguyên nhúng trực tiếp và script kích hoạt KaTeX Offline vào cuối tệp HTML
         katex_script_block = self._generate_katex_assets_and_script()
         final_html = f"{rendered_html}\n{katex_script_block}"
 

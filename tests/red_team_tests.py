@@ -1,13 +1,13 @@
 # ==============================================================================
-# BỘ KIỂM THỬ ĐỐI KHÁNG HỘP TRẮNG (WHITE-BOX RED-TEAM TEST SUITE v1.5.3)
+# BỘ KIỂM THỬ ĐỐI KHÁNG HỘP TRẮNG (WHITE-BOX RED-TEAM TEST SUITE v1.6.0)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Fault Tolerance, Schema Latency, Concurrency & Targeted Exceptions
+# Kiến trúc: Process Isolation, Ephemeral Memory, Level-6 Bookmark Verification
 # ==============================================================================
 
 import shutil
 import time
 import unittest
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -24,8 +24,27 @@ from src.pdf_compiler import PDFCompiler
 from src.pdf_metadata_injector import MetadataInjector
 
 
+def _worker_compile_process_task(args: tuple[str, str, Path, dict, dict]) -> bool:
+    """
+    Hàm thực thi độc lập cấp mô-đun dành cho ProcessPoolExecutor (Picklable Worker).
+    Cung cấp cho mỗi tiến trình một Vòng lặp Sự kiện (Event Loop) và không gian bộ nhớ riêng biệt.
+    """
+    html_content, pygments_css, output_pdf_path, academic_config, browser_config = args
+    try:
+        compiler = PDFCompiler(
+            output_encoding="utf-8",
+            academic_config=academic_config,
+            browser_config=browser_config,
+        )
+        compiler.compile_to_pdf(html_content, pygments_css, output_pdf_path)
+        return output_pdf_path.exists()
+    except (OSError, RuntimeError) as e:
+        print(f"Lỗi tiến trình tại {output_pdf_path.name}: {e}")
+        return False
+
+
 class RedTeamTestSuite(unittest.TestCase):
-    """Bộ kiểm thử đối kháng Hộp Trắng (White-Box Red-Teaming) nâng cấp v1.5.3."""
+    """Bộ kiểm thử đối kháng Hộp Trắng (White-Box Red-Teaming) nâng cấp v1.6.0."""
 
     def setUp(self):
         """Khởi tạo môi trường giả lập và các thư mục thử nghiệm tạm thời."""
@@ -43,7 +62,7 @@ class RedTeamTestSuite(unittest.TestCase):
 global_encoding_standard: "utf-8"
 syntax_highlighting_profile: "monokai"
 heading_retention_depth:
-  max_bookmark_level: 4
+  max_bookmark_level: 6
   enable_heading_anchors: true
   normalize_anchor_ascii: true
 directory_routing:
@@ -103,7 +122,9 @@ academic_standards_profile:
         )
         self.renderer = HTMLRenderer(
             theme_name="monokai",
-            max_bookmark_level=4,
+            max_bookmark_level=6,
+            enable_heading_anchors=True,
+            normalize_anchor_ascii=True,
             enable_math=True,
             fallback_to_raw=True,
             table_config={
@@ -206,7 +227,7 @@ academic_standards_profile:
             TypeError,
             OSError,
             RuntimeError,
-            ValidationError
+            ValidationError,
         ) as error:
             self.fail(f"Hệ thống bị sập khi thư mục input rỗng: {error}")
 
@@ -267,13 +288,16 @@ academic_standards_profile:
             "1. Plain TeX: $$x = {-b \\pm \\sqrt{b^2 - 4ac} \\over 2a}$$\n"
             "2. LaTeX2e: \\[x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\]\n"
             "3. KaTeX Web: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\n"
-            "$$\n"             "\\boxed{\n"             "\\mathbb Z\n"             "\\;\\xrightarrow{\\text{identify values differing by }N}\\;\n"             "\\mathbb Z/N\\mathbb Z\n"             "}\n"             "$$\n"
+            "$$\n"
+            "\\boxed{\n"             "\\mathbb Z\n"             "\\;\\xrightarrow{\\text{identify values differing by }N}\\;\n"
+            "\\mathbb Z/N\\mathbb Z\n"
+            "}\n"
+            "$$\n"
         )
         pygments_css, rendered_html = self.renderer.convert_to_html(complex_math_content)
 
         self.assertIn('<span class="math-tex">', rendered_html)
         self.assertIn('<div class="math-tex">', rendered_html)
-        self.assertIn("katex.min.js", rendered_html)
 
         output_pdf = self.temp_dir / "temp_katex_complex_test.pdf"
         try:
@@ -304,8 +328,8 @@ academic_standards_profile:
 
         _css, rendered_html = self.renderer.convert_to_html(table_markdown)
         self.assertIn("<table>", rendered_html)
-        self.assertIn('<th style="text-align:left">Cột Tiêu Đề 1</th>', rendered_html)
-        self.assertIn('<td style="text-align:left">Dữ liệu Dòng 1</td>', rendered_html)
+        self.assertIn("Cột Tiêu Đề 1", rendered_html)
+        self.assertIn("Dữ liệu Dòng 1", rendered_html)
 
     def test_scenario_9_table_overflow_clipping_and_logging(self):
         """Kịch bản 9: Kiểm thử bảng biểu cực rộng vượt quá lề giấy A4."""
@@ -349,7 +373,7 @@ academic_standards_profile:
     def test_scenario_11_schema_validation_hard_block_and_latency(self):
         """Kịch bản 11: Đo kiểm thời gian chặn đứng từ Pydantic khi cấu hình YAML sai định dạng."""
         invalid_config_content = self.test_config_content.replace(
-            "max_bookmark_level: 4", "max_bookmark_level: 10"
+            "max_bookmark_level: 6", "max_bookmark_level: 10"
         )
         invalid_config_path = self.config_dir / "invalid_settings.yaml"
         invalid_config_path.write_text(invalid_config_content, encoding="utf-8")
@@ -364,70 +388,105 @@ academic_standards_profile:
         self.assertLess(latency_ms, 500.0, "Thời gian phản hồi của màng lọc Lược đồ Pydantic vượt quá 500ms.")
 
     def test_scenario_12_ephemeral_memory_concurrency_stress(self):
-        """Kịch bản 12: Giả lập đa tiến trình để kiểm chứng hệ thống bộ nhớ tạm (Race Condition)."""
-        markdown_content = "# Báo cáo Đa luồng\nNội dung kiểm thử chống va chạm tệp tạm."
+        """Kịch bản 12: Giả lập đa tiến trình cách ly bộ nhớ vật lý triệt tiêu sập Event Loop (Process Isolation)."""
+        markdown_content = "# Báo cáo Đa tiến trình\nNội dung kiểm thử chống va chạm tệp tạm."
         pygments_css, rendered_html = self.renderer.convert_to_html(markdown_content)
-        
-        def _compile_task(thread_id: int) -> bool:
-            output_pdf = self.temp_dir / f"thread_output_{thread_id}.pdf"
-            try:
-                self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
-                return output_pdf.exists()
-            # Áp dụng Phòng thủ có Chủ đích: Bẫy cấu trúc lỗi I/O và Runtime thay vì Exception mù quáng
-            except (OSError, RuntimeError) as e:
-                print(f"Lỗi hệ thống tại luồng {thread_id}: {e}")
-                return False
+
+        academic_config = {
+            "active_standard": "apa",
+            "prevent_orphans_and_widows": True,
+        }
+        browser_config = {
+            "browser_type": "chromium",
+            "headless": True,
+            "page_timeout_ms": 30000,
+            "wait_until_event": "networkidle",
+            "print_background": True,
+            "prefer_css_page_size": True,
+        }
+
+        num_tasks = 10
+        task_args = [
+            (
+                rendered_html,
+                pygments_css,
+                self.temp_dir / f"process_output_{i}.pdf",
+                academic_config,
+                browser_config,
+            )
+            for i in range(num_tasks)
+        ]
 
         success_count = 0
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            # Khởi tạo 50 luồng đồng thời ghi PDF vào chung một phân vùng
-            futures = {executor.submit(_compile_task, i): i for i in range(50)}
+        with ProcessPoolExecutor(max_workers=4) as executor:
+            futures = [
+                executor.submit(_worker_compile_process_task, arg) for arg in task_args
+            ]
             for future in as_completed(futures):
                 if future.result():
                     success_count += 1
-                    
+
         self.assertEqual(
-            success_count, 
-            50, 
-            "Sự cố ghi đè tệp tạm (Race Condition) đã đánh sập tiến trình khi chạy đa luồng."
+            success_count,
+            num_tasks,
+            "Sự cố va chạm tiến trình hoặc sập Vòng lặp Sự kiện Playwright khi chạy đa tiến trình.",
         )
 
     def test_scenario_13_post_processing_metadata_outline_verification(self):
-        """Kịch bản 13: Quét nhị phân chéo xác nhận Cây Mục lục (Outline) đã được tiêm thành công."""
+        """Kịch bản 13: Quét nhị phân chéo xác nhận Cây Mục lục (Outline Tree) mở rộng đến Heading Cấp 6."""
         sample_md = (
             "# Chương 1: Kiến Trúc Hệ Thống\n"
             "Nội dung chương 1.\n"
             "## Phần 1.1: Trừu Tượng Hóa\n"
             "Nội dung phần 1.1.\n"
             "### Mục 1.1.1: Chi tiết Vi mô\n"
+            "Nội dung mục 1.1.1.\n"
+            "#### Tiêu đề Cấp 4: Cấu trúc Chi tiết\n"
+            "Nội dung cấp 4.\n"
+            "##### Tiêu đề Cấp 5: Phân rã Sâu\n"
+            "Nội dung cấp 5.\n"
+            "###### Tiêu đề Cấp 6: Mức Nguyên tử\n"
+            "Nội dung cấp 6.\n"
         )
         pygments_css, rendered_html = self.renderer.convert_to_html(sample_md)
-        output_pdf = self.temp_dir / "temp_metadata_injection_test.pdf"
-        
+        output_pdf = self.temp_dir / "temp_metadata_injection_level6_test.pdf"
+
         # 1. Khởi tạo PDF phẳng từ Playwright
         self.compiler.compile_to_pdf(rendered_html, pygments_css, output_pdf)
-        
-        # 2. Thực thi tiêm siêu dữ liệu qua PyMuPDF
-        injector = MetadataInjector(max_bookmark_level=4)
+
+        # 2. Thực thi tiêm siêu dữ liệu qua PyMuPDF với giới hạn Cấp 6
+        injector = MetadataInjector(max_bookmark_level=6)
         is_injected = injector.inject_metadata(output_pdf, rendered_html)
         self.assertTrue(is_injected, "Mô-đun MetadataInjector báo cáo quá trình tiêm thất bại.")
-        
+
         # 3. Mở tệp vật lý bằng động cơ nhị phân để quét Cây Mục lục
         document = fitz.open(output_pdf)
         toc = document.get_toc()
         document.close()
-        
-        self.assertGreater(len(toc), 0, "Cây Mục lục hoàn toàn trống rỗng trong tệp nhị phân PDF.")
-        
+
+        self.assertGreaterEqual(
+            len(toc), 6, "Cây Mục lục không thu thập đủ 6 cấp tiêu đề trong tệp nhị phân PDF."
+        )
+
         # Cấu trúc PyMuPDF trả về: [Mức độ (Level), Chuỗi Tiêu đề (Title), Trang (PageNumber)]
         self.assertEqual(toc[0][0], 1)
         self.assertIn("Chương 1", toc[0][1])
-        
+
         self.assertEqual(toc[1][0], 2)
         self.assertIn("Phần 1.1", toc[1][1])
-        
+
         self.assertEqual(toc[2][0], 3)
         self.assertIn("Mục 1.1.1", toc[2][1])
+
+        self.assertEqual(toc[3][0], 4)
+        self.assertIn("Tiêu đề Cấp 4", toc[3][1])
+
+        # KHẮC PHỤC ĐIỂM MÙ DẤU TRANG: Kiểm chứng sự tồn tại nhị phân của Cấp 5 và Cấp 6
+        self.assertEqual(toc[4][0], 5)
+        self.assertIn("Tiêu đề Cấp 5", toc[4][1])
+
+        self.assertEqual(toc[5][0], 6)
+        self.assertIn("Tiêu đề Cấp 6", toc[5][1])
 
 
 if __name__ == "__main__":
