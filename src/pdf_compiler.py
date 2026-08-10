@@ -1,9 +1,10 @@
 # ==============================================================================
-# BỘ BIÊN DỊCH PDF VÀ ĐỊNH DẠNG PAGED MEDIA (PDF COMPILER MODULE)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.3 - Strict Left-Align & KaTeX Fix)
-# Kiến trúc: Defensive Programming, Playwright CDP Synchronization & Isolation Layer
+# BỘ BIÊN DỊCH PDF VÀ ĐỊNH DẠNG PAGED MEDIA (PDF COMPILER MODULE v1.5.0)
+# Dự án: markdown_to_pdf_engine
+# Kiến trúc: Ephemeral File System, Playwright CDP Synchronization & Isolation Layer
 # ==============================================================================
 
+import tempfile
 from pathlib import Path
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -273,61 +274,69 @@ class PDFCompiler:
         prefer_css_page = self.browser_config.get("prefer_css_page_size", True)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_html_path = output_path.with_suffix(".temp.html")
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    "--disable-web-security",
-                    "--allow-file-access-from-files",
-                    "--no-sandbox",
-                ],
-            )
-            page = browser.new_page()
+        # 1. Cấp phát tệp bộ nhớ tạm thời ẩn danh ngẫu nhiên từ Hệ điều hành (Ephemeral File System)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding=self.output_encoding,
+            suffix=".html",
+            delete=False,
+        ) as temp_file:
+            temp_file.write(full_document)
+            temp_path = Path(temp_file.name)
 
-            try:
-                # 1. Ghi nội dung HTML tĩnh ra tệp tạm vật lý
-                temp_html_path.write_text(full_document, encoding=self.output_encoding)
-
-                # 2. Điều hướng Chromium bằng giao thức an toàn file:///
-                page.goto(
-                    temp_html_path.as_uri(),
-                    timeout=timeout_ms,
-                    wait_until=wait_until,
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--disable-web-security",
+                        "--allow-file-access-from-files",
+                        "--no-sandbox",
+                    ],
                 )
+                page = browser.new_page()
 
-                # 3. Đợi mỏ neo KaTeX đúc xong DOM toán học nếu có công thức
-                if (
-                    '<span class="math-tex">' in html_content
-                    or '<div class="math-tex">' in html_content
-                ):
-                    try:
-                        page.wait_for_selector(".katex", timeout=5000)
-                    except PlaywrightTimeoutError:
-                        print(
-                            "    -> [THÔNG_TIN] Trình duyệt đã bỏ qua pha kết xuất DOM toán học "
-                            "(Tài liệu không chứa công thức phức tạp hoặc thời gian Timeout kết thúc sớm)."
-                        )
+                try:
+                    # 2. Điều hướng Chromium bằng giao thức an toàn file:/// trỏ đến tệp tạm ngầm
+                    page.goto(
+                        temp_path.as_uri(),
+                        timeout=timeout_ms,
+                        wait_until=wait_until,
+                    )
 
-                # 4. Xuất bản tệp PDF chuẩn trang in A4 qua Playwright API
-                page.pdf(
-                    path=str(output_path),
-                    format="A4",
-                    print_background=print_bg,
-                    prefer_css_page_size=prefer_css_page,
-                    margin={
-                        "top": "20mm",
-                        "bottom": "20mm",
-                        "left": "20mm",
-                        "right": "20mm",
-                    },
-                )
-            finally:
-                browser.close()
-                # 5. Dọn dẹp tệp HTML trung gian bảo vệ không gian đĩa
-                if temp_html_path.exists():
-                    temp_html_path.unlink()
+                    # 3. Đợi mỏ neo KaTeX đúc xong DOM toán học nếu có công thức
+                    if (
+                        '<span class="math-tex">' in html_content
+                        or '<div class="math-tex">' in html_content
+                    ):
+                        try:
+                            page.wait_for_selector(".katex", timeout=5000)
+                        except PlaywrightTimeoutError:
+                            print(
+                                "    -> [THÔNG_TIN] Trình duyệt đã bỏ qua pha kết xuất DOM toán học "
+                                "(Tài liệu không chứa công thức phức tạp hoặc thời gian Timeout kết thúc sớm)."
+                            )
+
+                    # 4. Xuất bản tệp PDF chuẩn trang in A4 qua Playwright API
+                    page.pdf(
+                        path=str(output_path),
+                        format="A4",
+                        print_background=print_bg,
+                        prefer_css_page_size=prefer_css_page,
+                        margin={
+                            "top": "20mm",
+                            "bottom": "20mm",
+                            "left": "20mm",
+                            "right": "20mm",
+                        },
+                    )
+                finally:
+                    browser.close()
+        finally:
+            # 5. Ràng buộc Chu trình Sống (Context Management): Đảm bảo giải phóng tệp tạm dù tiến trình thành công hay ngắt đột ngột
+            if temp_path.exists():
+                temp_path.unlink(missing_ok=True)
 
         print(
             f"[THÀNH_CÔNG] Đã xuất bản tệp PDF sắc nét qua Chromium tại: {output_path}"

@@ -1,6 +1,7 @@
 # ==============================================================================
 # BẢNG KÊ VẬT TƯ PHỤ THUỘC (REQUIREMENTS SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.4.0 - Playwright Headless Engine)
+# Dự án: markdown_to_pdf_engine (Phiên bản v1.5.0 - Post-Processing Metadata)
+# Kiến trúc: Strict Schema Validation & PDF Metadata Injection Layer
 # ==============================================================================
 
 # 1. THƯ VIỆN NỀN TẢNG XỬ LÝ VĂN BẢN VÀ AST
@@ -10,6 +11,11 @@ pyyaml>=6.0.1
 mdit-py-plugins>=0.4.0
 linkify-it-py>=2.0.0
 
-# 2. ĐỘNG CƠ TRÌNH DUYỆT KHÔNG ĐẦU VÀ ĐÓNG GÓI PDF (MỚI v1.4.0)
-# Thay thế WeasyPrint/GTK3 và ziamath bằng Playwright Chromium Engine
+# 2. ĐỘNG CƠ TRÌNH DUYỆT KHÔNG ĐẦU VÀ ĐÓNG GÓI PDF
 playwright>=1.40.0
+
+# 3. ÉP CỦNG LƯỢC ĐỒ VÀ XÁC THỰC KIỂU DỮ LIỆU TĨNH
+pydantic>=2.5.0
+
+# 4. THAO TÁC NHỊ PHÂN VÀ TIÊM SIÊU DỮ LIỆU BOOKMARKS (MỚI v1.5.0)
+pymupdf>=1.23.0

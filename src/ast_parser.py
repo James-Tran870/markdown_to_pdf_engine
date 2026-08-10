@@ -1,11 +1,11 @@
 # ==============================================================================
-# PHẦN 1: TỆP src/ast_parser.py (NÂNG CẤP BỘ LỌC MẶT NẠ TOÁN HỌC v1.4.2)
+# PHẦN 1: TỆP src/ast_parser.py (NÂNG CẤP BĂM MẬT MÃ SHA-256 v1.5.1)
 # Đường dẫn: src/ast_parser.py
-# Kiến trúc: Safe Masking Pattern & Pre-AST Transformation
+# Kiến trúc: Cryptographic Masking Pattern & PEP 8 Import Compliant
 # ==============================================================================
 
+import hashlib
 import re
-import uuid
 from pathlib import Path
 
 from markdown_it import MarkdownIt
@@ -40,9 +40,9 @@ class ASTParser:
         try:
             from mdit_py_plugins.texmath import texmath_plugin
 
-            # Giải pháp Kiến trúc: Hủy bỏ vòng lặp gây xung đột quy tắc (Rule Collision).
-            # Chỉ nạp một lần duy nhất. Mọi chuẩn khác (brackets) sẽ được đồng bộ hóa
-            # thành dollars thông qua màng lọc _unify_math_delimiters.
+            # Hủy bỏ vòng lặp gây xung đột quy tắc (Rule Collision).
+            # Nạp duy nhất một lần. Cú pháp Brackets sẽ được đồng bộ hóa
+            # sang Dollars thông qua màng lọc _unify_math_delimiters.
             self.md_engine.use(texmath_plugin)
         except ImportError as error:
             print(
@@ -51,16 +51,27 @@ class ASTParser:
             )
 
     def _unify_math_delimiters(self, raw_text: str) -> str:
-        """Đồng bộ hóa đa tiêu chuẩn LaTeX về chuẩn dollars bằng phương pháp Mặt nạ an toàn."""
+        """Đồng bộ hóa đa tiêu chuẩn LaTeX về chuẩn dollars bằng phương pháp Băm Mật mã SHA-256."""
         if not self.enable_math:
             return raw_text
 
         code_blocks = {}
+        block_counter = 0
 
-        def mask_code(match):
-            # Tạo mã định danh độc nhất không trùng lặp cho mỗi khối mã
-            placeholder = f"__CODE_BLOCK_{uuid.uuid4().hex}__"
-            code_blocks[placeholder] = match.group(0)
+        def mask_code(match: re.Match) -> str:
+            nonlocal block_counter
+            block_counter += 1
+            code_snippet = match.group(0)
+
+            # Khởi tạo chữ ký băm mật mã SHA-256 từ nội dung khối mã và bộ đếm cục bộ
+            hash_input = f"salt_key_{block_counter}_{code_snippet}".encode(
+                self.encoding_standard
+            )
+            hash_signature = hashlib.sha256(hash_input).hexdigest()
+
+            # Mã định danh độc nhất không thể đoán trước (Cryptographic Placeholder)
+            placeholder = f"__CRYPTO_MASK_{hash_signature[:16]}_{block_counter}__"
+            code_blocks[placeholder] = code_snippet
             return placeholder
 
         # 1. Dán mặt nạ bảo vệ: Che các khối mã nguồn nhiều dòng (```...```) và nội dòng (`...`)

@@ -1,24 +1,57 @@
 # ==============================================================================
-# BẢO VỆ DỮ LIỆU CÁ NHÂN & CÔ LẬP LUỒNG I/O (INPUT & OUTPUT ISOLATION v1.4.3)
+# TỆP LOẠI TRỪ GIT (GITIGNORE SCHEMA v1.5.3)
+# Dự án: markdown_to_pdf_engine
+# Kiến trúc: Strict I/O Isolation, Privacy Protection & Red-Team Containment
 # ==============================================================================
 
-# 1. KHÓA TOÀN BỘ DỮ LIỆU ĐẦU VÀO (Giữ lại tệp giữ chỗ cấu trúc và tệp mẫu)
+# 1. BỘ NHỚ ĐỆM TRÌNH THÔNG DỊCH VÀ BỘ KIỂM TRA TĨNH (PYTHON & RUFF CACHE)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# 2. MÔI TRƯỜNG ẢO VÀ BỘ NHỚ ĐỆM BỘ BẢN CHROMIUM (VIRTUAL ENV & PLAYWRIGHT)
+venv/
+.venv/
+env/
+ENV/
+.playwright/
+ms-playwright/
+
+# 3. KHO NGUYÊN LIỆU ĐẦU VÀO VÀ THÀNH PHẨM PDF (LOCAL I/O ISOLATION)
+# Chặn hoàn bộ dữ liệu cá nhân, chỉ giữ lại tệp giữ cấu trúc thư mục và tệp mẫu
 input/*
 !input/.gitkeep
 !input/input_sample.md
 
-# 2. KHÓA TOÀN BỘ SẢN PHẨM ĐẦU RA (Giữ lại tệp giữ chỗ cấu trúc)
 output/*
 !output/.gitkeep
 
-# 3. CÔ LẬP WORKSPACE KIỂM THỬ RED-TEAM VÀ TỆP TẠM CHROMIUM
+# 4. KHÔNG GIAN BỘ NHỚ DÙNG MỘT LẦN VÀ WORKSPACE RED-TEAM (EPHEMERAL & TEST)
 temp_redteam_workspace/
 *.temp.html
+*.tmp
 *.css.tmp
+temp/
+build/
+dist/
 
-# 4. MÔI TRƯỜNG ẢO VÀ BỘ NHỚ ĐỆM TRÌNH DUYỆT PLAYWRIGHT
-venv/
-.venv/
-.playwright/
-ms-playwright/
-__pycache__/
+# 5. CẤU HÌNH IDE, MÔI TRƯỜNG CỤC BỘ VÀ TỆP RÁC HỆ THỐNG
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
+*.bak
+Thumbs.db
+Desktop.ini
+
+# 6. NHẬT KÝ VẬN HÀNH VÀ DỮ LIỆU CỐNG LỖI (LOGS & TRACEBACKS)
+*.log
+logs/
+redteam_reports/
+*.stacktrace
+.env
+config.local.yaml
