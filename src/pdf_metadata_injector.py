@@ -1,69 +1,90 @@
 # ==============================================================================
-# LỚP TIÊM SIÊU DỮ LIỆU HẬU KỲ (POST-PROCESSING METADATA INJECTOR v1.6.0)
-# Đường dẫn: src/pdf_metadata_injector.py
-# Kiến trúc: Forward Search Heuristic, Binary Outline Injection & Level-6 Depth Support
+# TỆP: src/pdf_metadata_injector.py (BỘ TIÊM SIÊU DỮ LIỆU HẬU KỲ v2.2.0)
+# Dự án: markdown_to_pdf_engine
+# Kiến trúc: Deterministic DOM Parsing, TOC Hierarchy Normalizer & PyMuPDF Compliant
 # ==============================================================================
 
-import re
 from pathlib import Path
+from typing import Any
 
-import fitz  # PyMuPDF
+import pymupdf as fitz
+from bs4 import BeautifulSoup
 
 
 class MetadataInjector:
-    """Bộ động cơ can thiệp nhị phân, trích xuất cấu trúc Heading và tiêm Bookmarks vào PDF."""
+    """Bộ động cơ can thiệp nhị phân, trích xuất cấu trúc Heading qua BeautifulSoup4 và tiêm Bookmarks."""
 
-    def __init__(self, max_bookmark_level: int = 6):
+    def __init__(self, max_bookmark_level: int = 6) -> None:
         """Khởi tạo cấu hình nội suy với giới hạn chiều sâu phân cấp Bookmark (Default: Level 6)."""
         self.max_bookmark_level = max_bookmark_level
 
     def _extract_headings_from_html(self, html_content: str) -> list[tuple[int, str]]:
+        """Quét chuỗi HTML trung gian qua Đồ thị DOM BeautifulSoup4 để tái tạo Cây Mục Lục.
+        
+        Phương thức này tự động lột bỏ toàn bộ các thẻ HTML markup trong công thức toán
+        (như <span class="vietnamese-math-text">) để thu về chuỗi văn bản sạch tuyệt đối.
         """
-        Quét chuỗi HTML trung gian để tái tạo cấu trúc Cây Mục Lục.
-        Bóc tách độ sâu (level) từ thuộc tính data-level và nội dung văn bản.
-        """
-        # Bắt chính xác cấu trúc <hX id="..." data-level="X">Text</hX> từ HTMLRenderer
-        pattern = re.compile(
-            r'<h([1-6])[^>]*data-level="([^"]+)"[^>]*>(.*?)</h\1>',
-            re.IGNORECASE | re.DOTALL,
-        )
-        headings = []
+        if not html_content or not html_content.strip():
+            return []
 
-        for match in pattern.finditer(html_content):
-            level_str = match.group(2)
-            raw_text = match.group(3)
+        soup = BeautifulSoup(html_content, "html.parser")
+        heading_tags = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
+        headings: list[tuple[int, str]] = []
 
-            try:
-                level = int(level_str)
-            except ValueError:
-                continue
+        for tag in heading_tags:
+            raw_level = tag.get("data-level")
 
-            # Rào chắn độ sâu cấu trúc theo cấu hình YAML (Mở rộng hỗ trợ đến Cấp 6)
+            if isinstance(raw_level, str):
+                try:
+                    level = int(raw_level)
+                except ValueError:
+                    level = int(tag.name[1])
+            elif isinstance(raw_level, list) and raw_level and isinstance(raw_level[0], str):
+                try:
+                    level = int(raw_level[0])
+                except ValueError:
+                    level = int(tag.name[1])
+            else:
+                level = int(tag.name[1])
+
             if level <= self.max_bookmark_level:
-                # Dọn dẹp các thẻ HTML nội dòng (<code>, <em>, <span class="math-tex">)
-                clean_text = re.sub(r"<[^>]+>", "", raw_text).strip()
-                
-                # Giải mã các thực thể HTML cơ bản để đối chiếu chính xác với văn bản PDF
-                clean_text = (
-                    clean_text.replace("&amp;", "&")
-                    .replace("&lt;", "<")
-                    .replace("&gt;", ">")
-                    .replace("&quot;", '"')
-                )
+                # Trích xuất toàn bộ văn bản thuần, tự động lột bỏ các thẻ HTML toán học con
+                clean_text = tag.get_text().strip()
+                clean_text = " ".join(clean_text.split())
 
                 if clean_text:
                     headings.append((level, clean_text))
 
         return headings
 
+    def _normalize_toc_hierarchy(self, raw_toc: list[list[Any]]) -> list[list[Any]]:
+        """Chuẩn hóa cấp độ phân cấp mảng TOC tuân thủ nghiêm ngặt quy tắc nhị phân của PyMuPDF.
+
+        Quy tắc PyMuPDF:
+        1. Phần tử đầu tiên (item 0) BẮT BUỘC có cấp độ bằng 1.
+        2. Các phần tử tiếp theo không được nhảy cấp vượt quá (prev_level + 1).
+        """
+        if not raw_toc:
+            return []
+
+        normalized_toc: list[list[Any]] = []
+        for idx, (level, title, page_num) in enumerate(raw_toc):
+            if idx == 0:
+                norm_level = 1
+            else:
+                prev_level = normalized_toc[idx - 1][0]
+                if level > prev_level + 1:
+                    norm_level = prev_level + 1
+                else:
+                    norm_level = level
+            normalized_toc.append([norm_level, title, page_num])
+
+        return normalized_toc
+
     def inject_metadata(self, pdf_path: Path, html_content: str) -> bool:
-        """
-        Thực thi tiến trình nội suy vị trí vật lý và tiêm cấu trúc Outline vào PDF.
-        Cơ chế: Tìm kiếm tịnh tiến văn bản (Forward Text Search) kết hợp Fallback logic.
-        """
+        """Thực thi tiến trình nội suy vị trí vật lý và tiêm cấu trúc Outline vào PDF."""
         headings = self._extract_headings_from_html(html_content)
-        
-        # Thoát sớm (Early Return) nếu tài liệu không có bất kỳ tiêu đề nào
+
         if not headings:
             return True
 
@@ -72,43 +93,35 @@ class MetadataInjector:
             return False
 
         try:
-            # Mở tệp nhị phân PDF qua engine MuPDF
             document = fitz.open(pdf_path)
-            toc = []
-            
-            # Con trỏ trang tịnh tiến (Không bao giờ lùi lại để tối ưu hiệu năng)
+            raw_toc: list[list[Any]] = []
+
             current_page_index = 0
             total_pages = len(document)
 
             for level, title in headings:
                 found_page = current_page_index
-                
-                # Quét tuần tự từ trang hiện tại đến cuối tài liệu
+
                 for page_num in range(current_page_index, total_pages):
                     page = document[page_num]
-                    
-                    # Xác thực sự tồn tại của chuỗi văn bản trên trang vật lý
                     text_instances = page.search_for(title)
                     if text_instances:
                         found_page = page_num
-                        current_page_index = page_num  # Neo vị trí cho lần tìm kiếm tiếp theo
+                        current_page_index = page_num
                         break
 
-                # Cấu trúc Cây Mục lục của PyMuPDF yêu cầu định dạng mảng: [Level, Title, PageNumber]
-                # Chỉ mục trang (PageNumber) của PyMuPDF tính từ 1 (1-based index)
-                toc.append([level, title, found_page + 1])
+                raw_toc.append([level, title, found_page + 1])
 
-            # Ghi đè toàn bộ Cây Mục lục vào lớp siêu dữ liệu của tệp
-            document.set_toc(toc)
-            
-            # Lưu tệp bằng phương pháp Incremental Save để bảo toàn an toàn dữ liệu đồ họa
+            # Chạy màng lọc chuẩn hóa cấp độ trước khi tiêm vào PyMuPDF
+            normalized_toc = self._normalize_toc_hierarchy(raw_toc)
+
+            document.set_toc(normalized_toc)
             document.saveIncr()
             document.close()
-            
-            print(f"    -> [SIÊU_DỮ_LIỆU] Tiêm thành công {len(toc)} dấu trang điều hướng (Bookmarks).")
+
+            print(f"    -> [SIÊU_DỮ_LIỆU] Tiêm thành công {len(normalized_toc)} dấu trang điều hướng (Bookmarks).")
             return True
 
-        # Triệt tiêu cảnh báo BLE001 bằng cách cô lập chính xác 3 rủi ro I/O và Nhị phân
         except (OSError, RuntimeError, ValueError) as error:
-            print(f"    -> [LỖI_TIÊM_SIÊU_DỮ_LIÊU] Thất bại khi ghi Bookmarks vào {pdf_path.name}: {error}")
+            print(f"    -> [LỖI_TIÊM_SIÊU_DỮ_LIỆU] Thất bại khi ghi Bookmarks vào {pdf_path.name}: {error}")
             return False

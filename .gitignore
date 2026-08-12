@@ -1,10 +1,10 @@
 # ==============================================================================
-# TỆP LOẠI TRỪ GIT (GITIGNORE SCHEMA v1.6.0)
-# Dự án: markdown_to_pdf_engine
-# Kiến trúc: Strict I/O Isolation, Privacy Protection & Total Input Blocking
+# TỆP : .gitignore
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.3.0 - Zero-Trust Git Isolation)
+# Kiến trúc: Strict I/O Isolation, Test Output Shielding & Cache Blocking
 # ==============================================================================
 
-# 1. BỘ NHỚ ĐỆM TRÌNH THÔNG DỊCH VÀ BỘ KIỂM TRA TĨNH (PYTHON & RUFF CACHE)
+# 1. BỘ NHỚ ĐỆM TRÌNH THÔNG DỊCH VÀ BỘ KIỂM TRA TĨNH (PYTHON, RUFF & PYTEST CACHE)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -22,18 +22,20 @@ ENV/
 ms-playwright/
 
 # 3. KHO NGUYÊN LIỆU ĐẦU VÀO VÀ THÀNH PHẨM PDF (LOCAL I/O ISOLATION & PRIVACY)
-# NÂNG CẤP v1.6.0: Chặn tuyệt đối 100% toàn bộ tệp trong input/, chỉ giữ lại .gitkeep để bảo tồn cây thư mục
+# Chặn tuyệt đối 100% toàn bộ tệp trong input/ và output/, chỉ giữ lại .gitkeep
 input/*
 !input/.gitkeep
 
 output/*
 !output/.gitkeep
 
-# 4. KHÔNG GIAN BỘ NHỚ DÙNG MỘT LẦN VÀ WORKSPACE RED-TEAM (EPHEMERAL & TEST)
+# 4. KHÔNG GIAN BỘ NHỚ DÙNG MỘT LẦN VÀ TỆP RÁC PHÁT SINH TỪ BỘ TEST
 temp_redteam_workspace/
 *.temp.html
 *.tmp
 *.css.tmp
+*.html
+test_hybrid_output.pdf
 temp/
 build/
 dist/

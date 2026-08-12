@@ -1,7 +1,7 @@
 # ==============================================================================
-# BẢNG ĐIỀU KHUYỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.6.0 - Expanded Bookmark Depth & Dynamic Routing)
-# Kiến trúc: Separation of Concerns (SoC) - Configuration Layer
+# BẢNG ĐIỀU KHIỂN VÀ QUY HOẠCH PIPELINE (MARKDOWN TO PDF ENGINE SCHEMA)
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.3.0 - Hybrid Math Engine Architecture)
+# Kiến trúc: Separation of Concerns (SoC) - Single Source of Truth (SSOT) Configuration Layer
 # ==============================================================================
 
 # 1. CHUẨN MÃ HÓA TOÀN CỤC (GLOBAL ENCODING STANDARD)
@@ -25,13 +25,14 @@ directory_routing:
 syntax_highlighting_profile: "monokai"
 
 # 4. GIỚI HẠN ĐỘ SÂU DẤU TRANG TIÊU ĐỀ (HEADING RETENTION & ANCHORS)
-# NÂNG CẤP v1.6.0: Mở rộng max_bookmark_level lên cấp 6 để tiêm trọn vẹn Cây Mục lục (Outline)
+# Mở rộng max_bookmark_level lên cấp 6 để tiêm trọn vẹn Cây Mục lục (Outline)
 heading_retention_depth:
   max_bookmark_level: 6
   enable_heading_anchors: true
   normalize_anchor_ascii: true
 
 # 5. THÔNG SỐ TRANG IN VẬT LÝ (DOCUMENT LAYOUT CONFIGURATION)
+# Cấu hình lề và khổ giấy chuẩn được nạp trực tiếp vào ExecutionContext DTO
 document_layout:
   page_size: "A4"
   margin: "20mm"
@@ -55,46 +56,34 @@ heading_numbering_system:
 # 8. ĐIỀU HƯỚNG TRÌNH DUYỆT KHÔNG ĐẦU (HEADLESS BROWSER ENGINE)
 # Quản lý vòng đời và tham số kết xuất trang in PDF của Playwright Chromium
 headless_browser_engine:
-  # Chủng loại trình duyệt thực thi (Chỉ chấp nhận: "chromium")
   browser_type: "chromium"
-  
-  # Chế độ ẩn giao diện GUI (True: Chạy ngầm hiệu năng cao)
   headless: true
-  
-  # Thời gian chờ tối đa cho tiến trình nạp và render 1 trang (tính bằng mili-giây)
   page_timeout_ms: 30000
-  
-  # Tiêu chuẩn xác định trang web đã nạp xong hoàn toàn
-  # Giá trị chấp nhận: "networkidle" (Chờ toàn bộ tài nguyên tĩnh và JS đúc xong DOM)
   wait_until_event: "networkidle"
-  
-  # Kích hoạt in hình nền và màu sắc định dạng CSS (Print Background Graphics)
   print_background: true
-  
-  # Ưu tiên sử dụng kích thước trang in khai báo trong CSS @page thay vì tham số mặc định
   prefer_css_page_size: true
 
-# 9. BỘ KẾT XUẤT TOÁN HỌC KATEX OFFLINE (KATEX OFFLINE CONFIG)
-# Cấu hình tài nguyên JS/CSS nội bộ để biên dịch 100% vĩ lệnh LaTeX không cần Internet
+# 9. ĐIỀU HƯỚNG CÔNG TẮC ĐỘNG CƠ TOÁN HỌC (MATH ENGINE ROUTING v2.3.0)
+# Chọn động cơ toán học active_engine:
+#  - "katex_placeholder": Động cơ KaTeX + Thuật toán DOM Placeholder Injection (Tốc độ cao)
+#  - "mathjax_svg": Động cơ MathJax v3 Vector SVG Offline (Độ sắc nét & Mỹ thuật hoàn hảo)
+math_engine_routing:
+  active_engine: "katex_placeholder"
+
+# 10. BỘ KẾT XUẤT TOÁN HỌC KATEX OFFLINE (KATEX OFFLINE CONFIG v2.3.0)
 katex_offline_config:
-  # Cờ bật/tắt chính cho động cơ kết xuất toán học KaTeX
   enable_katex: true
-  
-  # Đường dẫn tương đối trỏ đến thư mục chứa tài nguyên tĩnh KaTeX nội bộ
   assets_dir: "assets/katex"
-  
-  # Tên các tệp tĩnh bắt buộc phải xuất hiện trong thư mục assets_dir
   css_filename: "katex.min.css"
   js_filename: "katex.min.js"
   auto_render_js_filename: "auto-render.min.js"
-  
-  # Chế độ nghiêm ngặt khi gặp cú pháp LaTeX lạ (False: Bỏ qua cảnh báo nhỏ)
   strict_mode: false
-  
-  # Van ngắt mạch phòng thủ: Trả về văn bản gốc nếu công thức bị lỗi cú pháp thay vì làm sập trang
   throw_on_error: false
-  
-  # Danh sách ranh giới nhận diện công thức toán học (Delimiters)
+  enable_base64_math_encoding: true
+  enable_vietnamese_math_isolation: true
+  vietnamese_font_family: '"Times New Roman", "Segoe UI", Arial, sans-serif'
+  enable_base64_font_embedding: true
+  hybrid_typography_fallback: '"Cambria Math", "Times New Roman", serif'
   delimiters:
     - left: "$$"
       right: "$$"
@@ -109,14 +98,28 @@ katex_offline_config:
       right: "\\)"
       display: false
 
-# 10. CẤU HÌNH ĐỘNG CƠ XỬ LÝ BẢNG BIỂU GFM (TABLE RENDERING SYSTEM)
+# 11. BỘ KẾT XUẤT TOÁN HỌC MATHJAX V3 OFFLINE (MATHJAX V3 OFFLINE CONFIG v2.3.0)
+mathjax_offline_config:
+  enable_mathjax: true
+  assets_dir: "assets/mathjax"
+  js_filename: "tex-svg.js"
+  font_cache: "global"
+  scale: 1.0
+  inline_math_delimiters:
+    - ["$", "$"]
+    - ["\\(", "\\)"]
+  display_math_delimiters:
+    - ["$$", "$$"]
+    - ["\\[", "\\]"]
+
+# 12. CẤU HÌNH ĐỘNG CƠ XỬ LÝ BẢNG BIỂU GFM (TABLE RENDERING SYSTEM)
 table_rendering_system:
   enable_gfm_tables: true
   overflow_strategy: "clip_and_warn"
   repeat_header_on_page_break: true
   max_printable_width_mm: 170
 
-# 11. MA TRẬN QUY CHUẨN IN ẤN HỌC THUẬT (ACADEMIC STANDARDS PROFILE)
+# 13. MA TRẬN QUY CHUẨN IN ẤN HỌC THUẬT (ACADEMIC STANDARDS PROFILE)
 academic_standards_profile:
   active_standard: "apa"
   prevent_orphans_and_widows: true

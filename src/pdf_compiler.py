@@ -1,11 +1,12 @@
 # ==============================================================================
-# BỘ BIÊN DỊCH PDF VÀ ĐỊNH DẠNG PAGED MEDIA (PDF COMPILER MODULE v1.6.0)
+# TỆP: src/pdf_compiler.py (BỘ BIÊN DỊCH PDF VÀ PAGED MEDIA v2.3.0)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Ephemeral Memory, Security Sandbox & CSS Counter Decoupling
+# Kiến trúc: Dynamic Layout DTO, Ephemeral Memory & SVG Vector Boundaries
 # ==============================================================================
 
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
@@ -17,12 +18,19 @@ class PDFCompiler:
     def __init__(
         self,
         output_encoding: str = "utf-8",
-        numbering_config: dict | None = None,
-        academic_config: dict | None = None,
-        browser_config: dict | None = None,
-    ):
-        """Khởi tạo động cơ PDF Compiler với tham số mã hóa, đánh số, học thuật và Playwright."""
+        layout_config: dict[str, Any] | None = None,
+        numbering_config: dict[str, Any] | None = None,
+        academic_config: dict[str, Any] | None = None,
+        browser_config: dict[str, Any] | None = None,
+        table_config: dict[str, Any] | None = None,
+    ) -> None:
+        """Khởi tạo động cơ PDF Compiler với tham số trang in, mã hóa, đánh số, học thuật, bảng biểu và Playwright."""
         self.output_encoding = output_encoding
+        self.layout_config = layout_config or {
+            "page_size": "A4",
+            "margin": "20mm",
+            "code_overflow_handling": "break-word",
+        }
         self.numbering_config = numbering_config or {}
         self.academic_config = academic_config or {}
         self.browser_config = browser_config or {
@@ -33,9 +41,15 @@ class PDFCompiler:
             "print_background": True,
             "prefer_css_page_size": True,
         }
+        self.table_config = table_config or {
+            "enable_gfm_tables": True,
+            "overflow_strategy": "clip_and_warn",
+            "repeat_header_on_page_break": True,
+            "max_printable_width_mm": 170,
+        }
 
     def _generate_css_counters(self) -> str:
-        """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề (Tối đa Cấp 4 theo APA)."""
+        """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề (Tối đa Cấp 4)."""
         enable_auto = self.numbering_config.get("enable_auto_numbering", True)
         if not enable_auto:
             return ""
@@ -89,8 +103,14 @@ class PDFCompiler:
         """
 
     def _build_paged_media_css(self, pygments_css: str) -> str:
-        """Tạo lập bộ CSS Paged Media hoàn chỉnh bao bọc toàn bộ quy chuẩn in ấn và Typography."""
+        """Tạo lập bộ CSS Paged Media hoàn chỉnh bao bọc toàn bộ quy chuẩn in ấn, Typography và Boundaries."""
         dynamic_counters_css = self._generate_css_counters()
+
+        # Trích xuất tham số Layout động từ ExecutionContext DTO
+        page_size = self.layout_config.get("page_size", "A4")
+        margin = self.layout_config.get("margin", "20mm")
+        code_overflow = self.layout_config.get("code_overflow_handling", "break-word")
+        max_printable_width = self.table_config.get("max_printable_width_mm", 170)
 
         prevent_orphans = self.academic_config.get("prevent_orphans_and_widows", True)
         orphans_widows_css = "orphans: 2; widows: 2;" if prevent_orphans else ""
@@ -99,8 +119,8 @@ class PDFCompiler:
         {pygments_css}
 
         @page {{ 
-            size: A4; 
-            margin: 20mm; 
+            size: {page_size}; 
+            margin: {margin}; 
         }}
         
         /* CƯỠNG CHẾ CĂN LỀ TRÁI TOÀN BỘ VĂN BẢN (TRIỆT TIÊU LỖI RÒ RỈ CĂN GIỮA) */
@@ -120,10 +140,7 @@ class PDFCompiler:
             text-align: left !important;
         }}
 
-        /* ================================================================== */
-        /* CẤU HÌNH TYPOGRAPHY TIÊU ĐỀ CHUẨN APA / IEEE (HEADING STYLING)     */
-        /* Cưỡng chế BOLD & LEFT-ALIGN cho H1-H6, độc lập hoàn toàn với Bookmark */
-        /* ================================================================== */
+        /* CẤU HÌNH TYPOGRAPHY TIÊU ĐỀ CHUẨN APA / IEEE (HEADING STYLING) */
         h1, h2, h3, h4, h5, h6 {{
             text-align: left !important;
             font-family: "Segoe UI Semibold", "Arial Bold", sans-serif;
@@ -155,15 +172,13 @@ class PDFCompiler:
 
         {dynamic_counters_css}
 
-        /* ================================================================== */
-        /* KIỂM SOÁT BẺ DÒNG VÀ CĂN LỀ KHỐI MÃ (CODE BLOCK)                   */
-        /* ================================================================== */
+        /* KIỂM SOÁT BẺ DÒNG VÀ CĂN LỀ KHỐI MÃ (CODE BLOCK) */
         code, pre, .highlight {{ 
             text-align: left !important;
             font-family: "Consolas", "Courier New", monospace;
             font-size: 9.5pt;
-            overflow-wrap: break-word;
-            word-wrap: break-word;
+            overflow-wrap: {code_overflow};
+            word-wrap: {code_overflow};
             white-space: pre-wrap; 
         }}
 
@@ -182,11 +197,11 @@ class PDFCompiler:
             text-align: left !important;
         }}
 
-        /* ================================================================== */
-        /* NÂNG CẤP ĐỊNH DẠNG KHUNG VIỀN VÀ TRÁNH NGẮT TRANG BẢNG (TABLES)   */
-        /* ================================================================== */
+        /* NÂNG CẤP ĐỊNH DẠNG KHUNG VIỀN VÀ TRÁNH NGẮT TRANG BẢNG (TABLES) */
         table {{
             width: 100%;
+            max-width: {max_printable_width}mm !important;
+            overflow-x: auto;
             border-collapse: collapse;
             margin-top: 1.2em;
             margin-bottom: 1.2em;
@@ -214,9 +229,7 @@ class PDFCompiler:
             break-inside: avoid;
         }}
 
-        /* ================================================================== */
-        /* CHỈ CĂN GIỮA DUY NHẤT KHỐI TOÁN HỌC (ISOLATED KATEX BLOCK)         */
-        /* ================================================================== */
+        /* CHỈ CĂN GIỮA DUY NHẤT KHỐI TOÁN HỌC (ISOLATED KATEX BLOCK) */
         .math-tex {{
             display: inline-block;
             text-align: initial;
@@ -236,6 +249,40 @@ class PDFCompiler:
             margin: 0.5em 0 !important;
             overflow-x: auto;
             overflow-y: hidden;
+        }}
+
+        /* [CẤU HÌNH BẢO VỆ BOUNDARIES SVG MATHJAX V3 v2.3.0]: Khống chế giới hạn lề A4 cho Đồ họa Vector */
+        mjx-container {{
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            vertical-align: middle !important;
+            outline: none !important;
+        }}
+
+        mjx-container[display="true"] {{
+            display: block !important;
+            text-align: center !important;
+            margin: 1em 0 !important;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }}
+
+        mjx-container[jax="SVG"] svg {{
+            max-width: 100% !important;
+            height: auto !important;
+            vertical-align: middle !important;
+            display: inline-block !important;
+        }}
+
+        svg {{
+            max-width: 100%;
+            height: auto;
+        }}
+
+        .vietnamese-math-text {{
+            font-family: "Times New Roman", "Segoe UI", Arial, sans-serif !important;
+            display: inline-block !important;
         }}
 
         .math-error, .math-raw {{
@@ -274,7 +321,7 @@ class PDFCompiler:
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 1. Cấp phát tệp bộ nhớ tạm thời ẩn danh ngẫu nhiên từ Hệ điều hành (Ephemeral File System)
+        # 1. Cấp phát tệp bộ nhớ tạm thời ẩn danh ngẫu nhiên từ Hệ điều hành
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding=self.output_encoding,
@@ -286,52 +333,55 @@ class PDFCompiler:
 
         try:
             with sync_playwright() as p:
-                # KHIÊN AN NINH v1.6.0: Gỡ bỏ hoàn toàn bộ 3 cờ hạ bảo mật (--disable-web-security, --allow-file-access-from-files, --no-sandbox)
-                browser = p.chromium.launch(
-                    headless=True
-                )
+                browser = p.chromium.launch(headless=True)
                 page = browser.new_page()
 
                 try:
-                    # 2. Điều hướng Chromium bằng giao thức an toàn file:/// trỏ đến tệp tạm ngầm
+                    # 2. Điều hướng Chromium bằng giao thức an toàn file:///
                     page.goto(
                         temp_path.as_uri(),
                         timeout=timeout_ms,
                         wait_until=wait_until,
                     )
 
-                    # 3. Đợi mỏ neo KaTeX đúc xong DOM toán học nếu có công thức
+                    # 3. Đợi mỏ neo KaTeX hoặc MathJax đúc xong DOM toán học nếu có công thức
                     if (
                         '<span class="math-tex">' in html_content
                         or '<div class="math-tex">' in html_content
+                        or 'class="math-tex-b64"' in html_content
+                        or 'MathJax' in html_content
                     ):
                         try:
-                            page.wait_for_selector(".katex", timeout=5000)
+                            # Đợi một trong các selector đại diện cho KaTeX (.katex) hoặc MathJax (mjx-container)
+                            page.wait_for_selector(".katex, mjx-container, svg", timeout=5000)
                         except PlaywrightTimeoutError:
                             print(
                                 "    -> [THÔNG_TIN] Trình duyệt đã bỏ qua pha kết xuất DOM toán học "
                                 "(Tài liệu không chứa công thức phức tạp hoặc thời gian Timeout kết thúc sớm)."
                             )
 
-                    # 4. Xuất bản tệp PDF chuẩn trang in A4 qua Playwright API
+                    # 4. Xuất bản tệp PDF chuẩn trang in qua Playwright API
                     page.pdf(
                         path=str(output_path),
-                        format="A4",
+                        format=self.layout_config.get("page_size", "A4"),
                         print_background=print_bg,
                         prefer_css_page_size=prefer_css_page,
                         margin={
-                            "top": "20mm",
-                            "bottom": "20mm",
-                            "left": "20mm",
-                            "right": "20mm",
+                            "top": self.layout_config.get("margin", "20mm"),
+                            "bottom": self.layout_config.get("margin", "20mm"),
+                            "left": self.layout_config.get("margin", "20mm"),
+                            "right": self.layout_config.get("margin", "20mm"),
                         },
                     )
                 finally:
                     browser.close()
         finally:
-            # 5. Ràng buộc Chu trình Sống (Context Management): Đảm bảo giải phóng tệp tạm dù tiến trình thành công hay ngắt đột ngột
+            # 5. Ràng buộc Chu trình Sống: Đảm bảo giải phóng tệp tạm
             if temp_path.exists():
-                temp_path.unlink(missing_ok=True)
+                try:
+                    temp_path.unlink()
+                except OSError:
+                    pass
 
         print(
             f"[THÀNH_CÔNG] Đã xuất bản tệp PDF sắc nét qua Chromium tại: {output_path}"

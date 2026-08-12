@@ -1,22 +1,21 @@
 # ==============================================================================
-# TỆP: main.py (BỘ ĐIỀU PHỐI PIPELINE, PYDANTIC DTO & DYNAMIC UNPACKING v1.6.0)
+# TỆP: main.py (BỘ ĐIỀU PHỐI PIPELINE, HYBRID DTO & UNPACKING v2.3.0)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Strict Schema Validation & Dynamic Sub-Schema Unpacking
+# Kiến trúc: Single Source of Truth (SSOT), ExecutionContext & Hybrid Math DTO
 # ==============================================================================
 
 import sys
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from src.ast_parser import ASTParser
 from src.html_renderer import HTMLRenderer
 from src.pdf_compiler import PDFCompiler
 from src.pdf_metadata_injector import MetadataInjector
 
 # ==============================================================================
-# 1. ĐỊNH NGHĨA CÁC MÔ HÌNH DTO (DATA TRANSFER OBJECTS) QUA PYDANTIC
+# 1. ĐỊNH NGHĨA CÁC MÔ HÌNH DTO (DATA TRANSFER OBJECTS) QUA PYDANTIC V2
 # ==============================================================================
 
 class DirectoryRoutingConfig(BaseModel):
@@ -95,7 +94,7 @@ class KaTeXDelimiterConfig(BaseModel):
 
 
 class KaTeXOfflineConfig(BaseModel):
-    """Lược đồ cấu hình động cơ KaTeX Offline."""
+    """Lược đồ cấu hình động cơ KaTeX Offline Mở rộng (v2.3.0)."""
     enable_katex: bool = True
     assets_dir: str = "assets/katex"
     css_filename: str = "katex.min.css"
@@ -103,7 +102,46 @@ class KaTeXOfflineConfig(BaseModel):
     auto_render_js_filename: str = "auto-render.min.js"
     strict_mode: bool = False
     throw_on_error: bool = False
+    enable_base64_math_encoding: bool = True
+    enable_vietnamese_math_isolation: bool = True
+    vietnamese_font_family: str = '"Times New Roman", "Segoe UI", Arial, sans-serif'
+    enable_base64_font_embedding: bool = True
+    hybrid_typography_fallback: str = '"Cambria Math", "Times New Roman", serif'
     delimiters: list[KaTeXDelimiterConfig] = []
+
+
+class MathEngineRoutingConfig(BaseModel):
+    """Lược đồ điều hướng công tắc động cơ toán học (NÂNG CẤP KIẾN TRÚC LAI v2.3.0)."""
+    active_engine: str = "katex_placeholder"
+
+    @field_validator("active_engine")
+    @classmethod
+    def validate_active_engine(cls, value: str) -> str:
+        """Xác thực cờ active_engine chỉ nhận các giá trị động cơ được hỗ trợ."""
+        allowed_engines = {"katex_placeholder", "mathjax_svg"}
+        clean_value = value.strip().lower()
+        if clean_value not in allowed_engines:
+            # Sửa lỗi Ruff C414: Bỏ hàm list() dư thừa bên trong sorted()
+            raise ValueError(
+                f"[VI_PHẠM_LƯỢC_ĐỒ] Động cơ toán học '{value}' không được hỗ trợ. "
+                f"Giá trị hợp lệ phải là một trong các tùy chọn: {sorted(allowed_engines)}."
+            )
+        return clean_value
+
+
+class MathJaxOfflineConfig(BaseModel):
+    """Lược đồ cấu hình động cơ MathJax v3 Offline (NÂNG CẤP KIẾN TRÚC LAI v2.3.0)."""
+    enable_mathjax: bool = True
+    assets_dir: str = "assets/mathjax"
+    js_filename: str = "tex-svg.js"
+    font_cache: str = "global"
+    scale: float = Field(default=1.0, ge=0.1, le=5.0)
+    inline_math_delimiters: list[list[str]] = Field(
+        default_factory=lambda: [["$", "$"], ["\\(", "\\)"]]
+    )
+    display_math_delimiters: list[list[str]] = Field(
+        default_factory=lambda: [["$$", "$$"], ["\\[", "\\]"]]
+    )
 
 
 class TableRenderingSystemConfig(BaseModel):
@@ -123,7 +161,7 @@ class AcademicStandardsProfileConfig(BaseModel):
 
 
 class AppConfig(BaseModel):
-    """Lược đồ tổng thể cho toàn bộ ứng dụng (Global Engine Schema)."""
+    """Lược đồ tổng thể cho toàn bộ ứng dụng (Global Engine Schema v2.3.0)."""
     global_encoding_standard: str = "utf-8"
     directory_routing: DirectoryRoutingConfig = Field(default_factory=DirectoryRoutingConfig)
     syntax_highlighting_profile: str = "monokai"
@@ -132,13 +170,32 @@ class AppConfig(BaseModel):
     typography_configuration: TypographyConfiguration = Field(default_factory=TypographyConfiguration)
     heading_numbering_system: HeadingNumberingSystemConfig = Field(default_factory=HeadingNumberingSystemConfig)
     headless_browser_engine: HeadlessBrowserEngineConfig = Field(default_factory=HeadlessBrowserEngineConfig)
+    math_engine_routing: MathEngineRoutingConfig = Field(default_factory=MathEngineRoutingConfig)
     katex_offline_config: KaTeXOfflineConfig = Field(default_factory=KaTeXOfflineConfig)
+    mathjax_offline_config: MathJaxOfflineConfig = Field(default_factory=MathJaxOfflineConfig)
     table_rendering_system: TableRenderingSystemConfig = Field(default_factory=TableRenderingSystemConfig)
     academic_standards_profile: AcademicStandardsProfileConfig = Field(default_factory=AcademicStandardsProfileConfig)
 
 
 # ==============================================================================
-# 2. HÀM NẠP CẤU HÌNH VÀ XÁC THỰC LƯỢC ĐỒ TỰ ĐỘNG
+# 2. ĐỐI TƯỢNG NGỮ CẢNH THỰC THI TRUNG TÂM (EXECUTION CONTEXT SSOT)
+# ==============================================================================
+
+class ExecutionContext(BaseModel):
+    """Vùng chứa Ngữ cảnh Thực thi Toàn cục (Single Source of Truth - SSOT DTO v2.3.0).
+    
+    Đóng gói cấu hình gốc và thông tin tệp I/O đang xử lý nhằm triệt tiêu
+    hoàn toàn sự cố trôi dạt tham số hạ nguồn. Chuẩn hóa cú pháp PEP 604.
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    config: AppConfig
+    input_md_path: Path | None = None
+    output_pdf_path: Path | None = None
+
+
+# ==============================================================================
+# 3. HÀM NẠP CẤU HÌNH VÀ TẠO NGỮ CẢNH THỰC THI
 # ==============================================================================
 
 def load_configuration(config_path: Path) -> AppConfig:
@@ -156,7 +213,6 @@ def load_configuration(config_path: Path) -> AppConfig:
                     "[LỖI_CẤU_HÌNH] Cấu trúc tệp YAML không hợp lệ (Phải là dạng Dictionary)."
                 )
 
-        # Thực thi cưỡng chế kiểm tra kiểu dữ liệu qua Pydantic DTO Model
         validated_config = AppConfig.model_validate(raw_yaml_data)
         return validated_config
 
@@ -199,60 +255,72 @@ def ensure_directories_exist(
 
 
 # ==============================================================================
-# 3. ĐIỀU PHỐI ĐƯỜNG ỐNG XỬ LÝ ĐƠN TỆP VÀ HÀNG LOẠT
+# 4. ĐIỀU PHỐI ĐƯỜNG ỐNG XỬ LÝ ĐƠN TỆP VÀ HÀNG LOẠT
 # ==============================================================================
 
 def execute_single_file_pipeline(
-    input_md_path: Path, output_pdf_path: Path, config: AppConfig
+    input_md_path: Path,
+    output_pdf_path: Path,
+    config: AppConfig | ExecutionContext,
 ) -> bool:
-    """Biên dịch Markdown sang PDF thông qua Playwright, sau đó tiêm Bookmarks qua PyMuPDF."""
+    """Biên dịch Markdown sang PDF sử dụng ExecutionContext DTO chuẩn hóa (v2.3.0)."""
     try:
-        # 1. Truy xuất dữ liệu trực tiếp thông qua thuộc tính DTO
-        encoding_standard = config.global_encoding_standard
-        theme_profile = config.syntax_highlighting_profile
-        enable_math = config.katex_offline_config.enable_katex
-        enable_tables = config.table_rendering_system.enable_gfm_tables
+        # 1. Trích xuất hoặc khởi tạo ExecutionContext từ tham số đầu vào
+        if isinstance(config, ExecutionContext):
+            context = config
+            app_config = context.config
+        else:
+            app_config = config
+            context = ExecutionContext(
+                config=app_config,
+                input_md_path=input_md_path,
+                output_pdf_path=output_pdf_path,
+            )
 
-        # 2. Khai báo Dictionary chuyển giao hạ nguồn cho các Module bằng toán tử model_dump()
-        retention_config = config.heading_retention_depth.model_dump()
-        browser_config = config.headless_browser_engine.model_dump()
-        katex_config = config.katex_offline_config.model_dump()
-        table_config = config.table_rendering_system.model_dump()
-        numbering_config = config.heading_numbering_system.model_dump()
-        academic_config = config.academic_standards_profile.model_dump()
+        # 2. Truy xuất các khối cấu hình chuẩn DTO
+        encoding_standard = app_config.global_encoding_standard
+        theme_profile = app_config.syntax_highlighting_profile
+        enable_math = app_config.katex_offline_config.enable_katex
 
-        # 3. Khởi tạo và nạp tệp qua bộ phân tích AST (Giai đoạn 1)
-        parser = ASTParser(
-            encoding_standard=encoding_standard,
-            enable_math=enable_math,
-            enable_tables=enable_tables,
-        )
-        _ast_tokens = parser.parse_markdown_file(input_md_path)
+        # Trích xuất đầy đủ các khối DTO dưới dạng từ điển phục vụ truyền dẫn hạ nguồn
+        layout_config = app_config.document_layout.model_dump()
+        retention_config = app_config.heading_retention_depth.model_dump()
+        browser_config = app_config.headless_browser_engine.model_dump()
+        math_routing_config = app_config.math_engine_routing.model_dump()
+        katex_config = app_config.katex_offline_config.model_dump()
+        mathjax_config = app_config.mathjax_offline_config.model_dump()
+        table_config = app_config.table_rendering_system.model_dump()
+        numbering_config = app_config.heading_numbering_system.model_dump()
+        academic_config = app_config.academic_standards_profile.model_dump()
 
-        # 4. Đọc nội dung văn bản thô theo chuẩn UTF-8
+        # 3. Đọc nội dung văn bản thô theo chuẩn UTF-8
         with open(input_md_path, "r", encoding=encoding_standard) as file_stream:
             markdown_text = file_stream.read()
 
-        # 5. Kết xuất mã HTML ngữ nghĩa (Giai đoạn 2)
-        # NÂNG CẤP: Truyền dẫn động toàn bộ Lược đồ con bằng **retention_config
+        # 4. Kết xuất mã HTML ngữ nghĩa (Giai đoạn 2 - Truyền dẫn DTO Routing & MathJax v2.3.0)
         renderer = HTMLRenderer(
             theme_name=theme_profile,
             **retention_config,
             enable_math=enable_math,
             table_config=table_config,
             katex_config=katex_config,
+            math_routing_config=math_routing_config,
+            mathjax_config=mathjax_config,
+            encoding_standard=encoding_standard,
         )
         pygments_css, rendered_html = renderer.convert_to_html(markdown_text)
 
-        # 6. Đảm bảo thư mục cha của tệp đầu ra đã được khởi tạo
+        # 5. Đảm bảo thư mục cha của tệp đầu ra đã được khởi tạo
         output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 7. Biên dịch PDF phẳng qua Playwright Chromium Engine (Giai đoạn 3)
+        # 6. Biên dịch PDF qua Playwright Chromium Engine (Giai đoạn 3)
         compiler = PDFCompiler(
             output_encoding=encoding_standard,
+            layout_config=layout_config,
             numbering_config=numbering_config,
             academic_config=academic_config,
             browser_config=browser_config,
+            table_config=table_config,
         )
         compiler.compile_to_pdf(
             html_content=rendered_html,
@@ -260,18 +328,20 @@ def execute_single_file_pipeline(
             output_path=output_pdf_path,
         )
 
-        # 8. Tiêm Siêu Dữ Liệu Hậu Kỳ bằng PyMuPDF (Giai đoạn 4)
+        # 7. Tiêm Siêu Dữ Liệu Hậu Kỳ bằng PyMuPDF (Giai đoạn 4)
         print("    -> [ĐIỀU_PHỐI] Đang kích hoạt động cơ tiêm siêu dữ liệu Bookmarks...")
         injector = MetadataInjector(
-            max_bookmark_level=config.heading_retention_depth.max_bookmark_level
+            max_bookmark_level=app_config.heading_retention_depth.max_bookmark_level
         )
         is_metadata_injected = injector.inject_metadata(
-            pdf_path=output_pdf_path, 
-            html_content=rendered_html
+            pdf_path=output_pdf_path,
+            html_content=rendered_html,
         )
-        
+
         if not is_metadata_injected:
-            print(f"    -> [CẢNH_BÁO_ĐIỀU_PHỐI] Tệp PDF đồ họa '{input_md_path.name}' được in thành công nhưng tiến trình tiêm Bookmarks gặp sự cố.")
+            print(
+                f"    -> [CẢNH_BÁO_ĐIỀU_PHỐI] Tệp PDF '{input_md_path.name}' được in thành công nhưng tiến trình tiêm Bookmarks gặp sự cố."
+            )
 
         return True
 
@@ -290,8 +360,8 @@ def execute_single_file_pipeline(
 
 
 def batch_process_directory(base_directory: Path) -> None:
-    """Động cơ điều phối quét hàng loạt dựa trên Pydantic DTO Schema."""
-    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (PYDANTIC DTO & DYNAMIC UNPACKING v1.6.0) ===")
+    """Động cơ điều phối quét hàng loạt dựa trên ExecutionContext SSOT Schema (v2.3.0)."""
+    print("=== BẮT ĐẦU TIẾN TRÌNH BIÊN DỊCH HÀNG LOẠT (HYBRID MATH ENGINE ARCHITECTURE v2.3.0) ===")
 
     config_path = base_directory / "config" / "settings.yaml"
     config = load_configuration(config_path)
@@ -348,10 +418,16 @@ def batch_process_directory(base_directory: Path) -> None:
             skipped_count += 1
             continue
 
+        file_context = ExecutionContext(
+            config=config,
+            input_md_path=input_file_path,
+            output_pdf_path=target_output_pdf_path,
+        )
+
         is_successful = execute_single_file_pipeline(
             input_md_path=input_file_path,
             output_pdf_path=target_output_pdf_path,
-            config=config,
+            config=file_context,
         )
 
         if is_successful:

@@ -1,7 +1,7 @@
 # ==============================================================================
-# BẢNG KÊ VẬT TƯ PHỤ THUỘC (REQUIREMENTS SCHEMA)
-# Dự án: markdown_to_pdf_engine (Phiên bản v1.5.0 - Post-Processing Metadata)
-# Kiến trúc: Strict Schema Validation & PDF Metadata Injection Layer
+# TỆP : requirements.txt
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.3.0 - Hybrid Math Engine Architecture)
+# Kiến trúc: Strict Schema Validation, Hybrid Math Matrix & Pytest Testing Suite
 # ==============================================================================
 
 # 1. THƯ VIỆN NỀN TẢNG XỬ LÝ VĂN BẢN VÀ AST
@@ -17,5 +17,9 @@ playwright>=1.40.0
 # 3. ÉP CỦNG LƯỢC ĐỒ VÀ XÁC THỰC KIỂU DỮ LIỆU TĨNH
 pydantic>=2.5.0
 
-# 4. THAO TÁC NHỊ PHÂN VÀ TIÊM SIÊU DỮ LIỆU BOOKMARKS (MỚI v1.5.0)
+# 4. THAO TÁC NHỊ PHÂN VÀ TIÊM SIÊU DỮ LIỆU BOOKMARKS
 pymupdf>=1.23.0
+beautifulsoup4>=4.12.0
+
+# 5. KHUNG BỘ KIỂM THỬ MÔ-ĐƯN HỘP TRẮNG (TESTING FRAMEWORK)
+pytest>=8.0.0
