@@ -1,7 +1,7 @@
 # ==============================================================================
-# TỆP: src/pdf_compiler.py (BỘ BIÊN DỊCH PDF VÀ PAGED MEDIA v2.3.0)
+# TỆP: src/pdf_compiler.py (BỘ BIÊN DỊCH PDF & PAGED MEDIA WINDOWS 11 v2.5.1)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Dynamic Layout DTO, Ephemeral Memory & SVG Vector Boundaries
+# Kiến trúc: Dynamic Layout DTO, Ephemeral Memory, Windows 11 Typography & Callouts
 # ==============================================================================
 
 import tempfile
@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 
 
 class PDFCompiler:
-    """Động cơ biên dịch HTML và CSS Paged Media thành tệp PDF qua Playwright Chromium."""
+    """Động cơ biên dịch HTML và CSS Paged Media thành tệp PDF tối ưu hóa cho Windows 11."""
 
     def __init__(
         self,
@@ -103,10 +103,9 @@ class PDFCompiler:
         """
 
     def _build_paged_media_css(self, pygments_css: str) -> str:
-        """Tạo lập bộ CSS Paged Media hoàn chỉnh bao bọc toàn bộ quy chuẩn in ấn, Typography và Boundaries."""
+        """Tạo lập bộ CSS Paged Media Windows 11 bao bọc Typography Song ngữ, Backtick và Obsidian Callouts."""
         dynamic_counters_css = self._generate_css_counters()
 
-        # Trích xuất tham số Layout động từ ExecutionContext DTO
         page_size = self.layout_config.get("page_size", "A4")
         margin = self.layout_config.get("margin", "20mm")
         code_overflow = self.layout_config.get("code_overflow_handling", "break-word")
@@ -123,12 +122,12 @@ class PDFCompiler:
             margin: {margin}; 
         }}
         
-        /* CƯỠNG CHẾ CĂN LỀ TRÁI TOÀN BỘ VĂN BẢN (TRIỆT TIÊU LỖI RÒ RỈ CĂN GIỮA) */
-        body, p, ul, ol, li, blockquote {{
+        /* 1. HỆ THỐNG PHÔNG CHỮ CHUẨN HÓA WINDOWS 11 SONG NGỮ (VI - EN) */
+        body, p, ul, ol, li {{
             text-align: left !important;
-            font-family: "Segoe UI", "Arial", "Calibri", "Tahoma", sans-serif;
+            font-family: "Segoe UI Variable Text", "Segoe UI", "Calibri", Arial, sans-serif;
             font-size: 11pt;
-            line-height: 1.6;
+            line-height: 1.65;
             color: #1a1a1a;
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
@@ -138,18 +137,19 @@ class PDFCompiler:
         p {{
             {orphans_widows_css}
             text-align: left !important;
+            margin-top: 0.4em;
+            margin-bottom: 0.8em;
         }}
 
-        /* CẤU HÌNH TYPOGRAPHY TIÊU ĐỀ CHUẨN APA / IEEE (HEADING STYLING) */
+        /* 2. CẤU HÌNH TIÊU ĐỀ TYPOGRAPHY APA / IEEE CHO WINDOWS 11 */
         h1, h2, h3, h4, h5, h6 {{
             text-align: left !important;
-            font-family: "Segoe UI Semibold", "Arial Bold", sans-serif;
-            font-weight: bold !important;
-            color: #000000;
-            line-height: 1.3;
-            margin-top: 1.2em;
+            font-family: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", "Arial Bold", sans-serif;
+            font-weight: 700 !important;
+            color: #0d1117;
+            line-height: 1.35;
+            margin-top: 1.4em;
             margin-bottom: 0.6em;
-            word-spacing: normal;
             page-break-after: avoid;
             break-after: avoid;
         }}
@@ -158,24 +158,15 @@ class PDFCompiler:
         h2 {{ font-size: 15pt; }}
         h3 {{ font-size: 13pt; }}
         h4 {{ font-size: 11pt; }}
-        
-        h5 {{ 
-            font-size: 11pt !important; 
-            font-style: italic; 
-        }}
-        
-        h6 {{ 
-            font-size: 11pt !important; 
-            font-style: italic; 
-            color: #333333; 
-        }}
+        h5 {{ font-size: 11pt !important; font-style: italic; }}
+        h6 {{ font-size: 11pt !important; font-style: italic; color: #4b5563; }}
 
         {dynamic_counters_css}
 
-        /* KIỂM SOÁT BẺ DÒNG VÀ CĂN LỀ KHỐI MÃ (CODE BLOCK) */
-        code, pre, .highlight {{ 
+        /* 3. KHỐI MÃ NGUỒN NHIỀU DÒNG VỚI CASCADIA CODE (WINDOWS 11 NATIVE) */
+        pre, .highlight {{ 
             text-align: left !important;
-            font-family: "Consolas", "Courier New", monospace;
+            font-family: "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace !important;
             font-size: 9.5pt;
             overflow-wrap: {code_overflow};
             word-wrap: {code_overflow};
@@ -186,18 +177,180 @@ class PDFCompiler:
             page-break-inside: avoid;
             break-inside: avoid;
             text-align: left !important;
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 12px;
+            border: 1px solid #e1e4e8;
         }}
 
         .highlight {{
-            padding: 10px;
-            border-radius: 4px;
+            padding: 12px;
+            border-radius: 6px;
             margin-bottom: 1em;
             page-break-inside: avoid;
             break-inside: avoid;
             text-align: left !important;
         }}
 
-        /* NÂNG CẤP ĐỊNH DẠNG KHUNG VIỀN VÀ TRÁNH NGẮT TRANG BẢNG (TABLES) */
+        /* 4. ĐỊNH HÌNH CHỮ TRONG DẤU NHÁY NGƯỢC (INLINE CODE / BACKTICK) */
+        :not(pre) > code {{
+            background-color: rgba(175, 184, 193, 0.22) !important;
+            padding: 0.15em 0.45em !important;
+            border-radius: 5px !important;
+            font-size: 88% !important;
+            color: #0969da !important;
+            font-family: "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace !important;
+            white-space: pre-wrap !important;
+            border: 1px solid rgba(175, 184, 193, 0.35) !important;
+            font-weight: 500 !important;
+        }}
+
+        /* 5. KHỐI TRÍCH DẪN TIÊU CHUẨN (STANDARD BLOCKQUOTE) */
+        blockquote {{
+            margin: 1.2em 0 !important;
+            padding: 0.6em 1.2em !important;
+            color: #57606a !important;
+            border-left: 4px solid #d0d7de !important;
+            background-color: #f6f8fa !important;
+            border-radius: 0 6px 6px 0 !important;
+            text-align: left !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }}
+
+        blockquote > p {{
+            margin: 0.4em 0 !important;
+            color: #57606a !important;
+        }}
+
+        /* ==========================================================================
+           6. MA TRẬN CSS OBSIDIAN CALLOUTS & GFM ALERTS ĐA TẦNG (GENERIC & SPECIFIC)
+           ========================================================================== */
+        
+        /* Cấu trúc Hộp Chứa Cơ Sở Toàn Năng cho Mọi Callout [data-callout] */
+        .markdown-alert, [data-callout] {{
+            padding: 12px 16px 14px 18px !important;
+            margin: 1.2em 0 !important;
+            border-left: 5px solid #6b7280 !important;
+            background-color: rgba(243, 244, 246, 0.7) !important;
+            border-radius: 6px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            text-align: left !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }}
+
+        /* Thanh Tiêu Đề Ngữ Nghĩa của Callout */
+        .markdown-alert-title {{
+            display: flex !important;
+            align-items: center !important;
+            font-weight: 700 !important;
+            font-size: 11pt !important;
+            margin-bottom: 8px !important;
+            text-transform: none !important;
+            letter-spacing: 0.3px;
+        }}
+
+        .markdown-alert-icon {{
+            margin-right: 8px !important;
+            font-size: 12pt !important;
+            display: inline-block !important;
+        }}
+
+        .markdown-alert > p {{
+            margin: 0.3em 0 !important;
+        }}
+
+        .markdown-alert > p:first-of-type {{
+            margin-top: 0 !important;
+        }}
+
+        .markdown-alert > p:last-child {{
+            margin-bottom: 0 !important;
+        }}
+
+        /* NHÓM 1: Note & Info (Xanh lam) */
+        [data-callout="note"], [data-callout="info"], .markdown-alert-note, .markdown-alert-info {{
+            border-left-color: #0969da !important;
+            background-color: rgba(9, 105, 218, 0.05) !important;
+        }}
+        [data-callout="note"] .markdown-alert-title, [data-callout="info"] .markdown-alert-title {{
+            color: #0969da !important;
+        }}
+        [data-callout="note"] .markdown-alert-icon::before, [data-callout="info"] .markdown-alert-icon::before {{
+            content: "ℹ️";
+        }}
+
+        /* NHÓM 2: Tip, Success & Done (Xanh lá) */
+        [data-callout="tip"], [data-callout="success"], [data-callout="done"], .markdown-alert-tip {{
+            border-left-color: #1a7f37 !important;
+            background-color: rgba(26, 127, 55, 0.05) !important;
+        }}
+        [data-callout="tip"] .markdown-alert-title, [data-callout="success"] .markdown-alert-title {{
+            color: #1a7f37 !important;
+        }}
+        [data-callout="tip"] .markdown-alert-icon::before {{
+            content: "💡";
+        }}
+        [data-callout="success"] .markdown-alert-icon::before, [data-callout="done"] .markdown-alert-icon::before {{
+            content: "✅";
+        }}
+
+        /* NHÓM 3: Important & Todo (Tím thạch anh) */
+        [data-callout="important"], [data-callout="todo"], .markdown-alert-important {{
+            border-left-color: #8250df !important;
+            background-color: rgba(130, 80, 223, 0.05) !important;
+        }}
+        [data-callout="important"] .markdown-alert-title, [data-callout="todo"] .markdown-alert-title {{
+            color: #8250df !important;
+        }}
+        [data-callout="important"] .markdown-alert-icon::before {{
+            content: "💬";
+        }}
+        [data-callout="todo"] .markdown-alert-icon::before {{
+            content: "📋";
+        }}
+
+        /* NHÓM 4: Warning & Attention (Vàng cam) */
+        [data-callout="warning"], [data-callout="attention"], .markdown-alert-warning {{
+            border-left-color: #9a6700 !important;
+            background-color: rgba(154, 103, 0, 0.06) !important;
+        }}
+        [data-callout="warning"] .markdown-alert-title, [data-callout="attention"] .markdown-alert-title {{
+            color: #9a6700 !important;
+        }}
+        [data-callout="warning"] .markdown-alert-icon::before, [data-callout="attention"] .markdown-alert-icon::before {{
+            content: "⚠️";
+        }}
+
+        /* NHÓM 5: Caution, Danger, Error & Bug (Đỏ thẫm) */
+        [data-callout="caution"], [data-callout="danger"], [data-callout="error"], [data-callout="bug"], .markdown-alert-caution {{
+            border-left-color: #d1242f !important;
+            background-color: rgba(209, 36, 47, 0.05) !important;
+        }}
+        [data-callout="caution"] .markdown-alert-title, [data-callout="danger"] .markdown-alert-title {{
+            color: #d1242f !important;
+        }}
+        [data-callout="caution"] .markdown-alert-icon::before, [data-callout="danger"] .markdown-alert-icon::before {{
+            content: "🛑";
+        }}
+        [data-callout="bug"] .markdown-alert-icon::before {{
+            content: "🪲";
+        }}
+
+        /* NHÓM 6: Quote & Cite (Xám kim loại) */
+        [data-callout="quote"], [data-callout="cite"], .markdown-alert-quote {{
+            border-left-color: #57606a !important;
+            background-color: rgba(87, 96, 106, 0.06) !important;
+        }}
+        [data-callout="quote"] .markdown-alert-title, [data-callout="cite"] .markdown-alert-title {{
+            color: #57606a !important;
+        }}
+        [data-callout="quote"] .markdown-alert-icon::before, [data-callout="cite"] .markdown-alert-icon::before {{
+            content: "❞";
+        }}
+
+        /* 7. ĐỊNH DẠNG KHUNG BẢNG BIỂU GFM (TABLES) */
         table {{
             width: 100%;
             max-width: {max_printable_width}mm !important;
@@ -211,7 +364,7 @@ class PDFCompiler:
         }}
 
         th, td {{
-            border: 1pt solid #1a1a1a;
+            border: 1pt solid #d0d7de;
             padding: 8px 12px;
             text-align: left !important;
             vertical-align: top;
@@ -219,9 +372,9 @@ class PDFCompiler:
         }}
 
         th {{
-            background-color: #f2f2f2;
-            font-weight: bold;
-            color: #000000;
+            background-color: #f6f8fa;
+            font-weight: 700;
+            color: #24292f;
         }}
 
         tr {{
@@ -229,11 +382,12 @@ class PDFCompiler:
             break-inside: avoid;
         }}
 
-        /* CHỈ CĂN GIỮA DUY NHẤT KHỐI TOÁN HỌC (ISOLATED KATEX BLOCK) */
+        /* 8. ĐỊNH DẠNG CÔNG THỨC TOÁN HỌC (KATEX & MATHJAX TYPOGRAPHY) */
         .math-tex {{
             display: inline-block;
             text-align: initial;
             margin: 0 0.1em;
+            font-family: "KaTeX_Math", "Cambria Math", "Times New Roman", serif !important;
         }}
 
         div.math-tex {{
@@ -246,12 +400,11 @@ class PDFCompiler:
 
         .katex-display {{
             text-align: center !important;
-            margin: 0.5em 0 !important;
+            margin: 0.6em 0 !important;
             overflow-x: auto;
             overflow-y: hidden;
         }}
 
-        /* [CẤU HÌNH BẢO VỆ BOUNDARIES SVG MATHJAX V3 v2.3.0]: Khống chế giới hạn lề A4 cho Đồ họa Vector */
         mjx-container {{
             max-width: 100% !important;
             overflow-x: auto !important;
@@ -281,19 +434,8 @@ class PDFCompiler:
         }}
 
         .vietnamese-math-text {{
-            font-family: "Times New Roman", "Segoe UI", Arial, sans-serif !important;
+            font-family: "Segoe UI", "Times New Roman", Arial, sans-serif !important;
             display: inline-block !important;
-        }}
-
-        .math-error, .math-raw {{
-            font-family: "Consolas", "Courier New", monospace;
-            color: #c93b2b;
-            background-color: #f8f9fa;
-            border: 1px solid #eaecf0;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.9em;
-            text-align: left !important;
         }}
         """
 
@@ -321,7 +463,6 @@ class PDFCompiler:
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 1. Cấp phát tệp bộ nhớ tạm thời ẩn danh ngẫu nhiên từ Hệ điều hành
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding=self.output_encoding,
@@ -337,14 +478,12 @@ class PDFCompiler:
                 page = browser.new_page()
 
                 try:
-                    # 2. Điều hướng Chromium bằng giao thức an toàn file:///
                     page.goto(
                         temp_path.as_uri(),
                         timeout=timeout_ms,
                         wait_until=wait_until,
                     )
 
-                    # 3. Đợi mỏ neo KaTeX hoặc MathJax đúc xong DOM toán học nếu có công thức
                     if (
                         '<span class="math-tex">' in html_content
                         or '<div class="math-tex">' in html_content
@@ -352,15 +491,13 @@ class PDFCompiler:
                         or 'MathJax' in html_content
                     ):
                         try:
-                            # Đợi một trong các selector đại diện cho KaTeX (.katex) hoặc MathJax (mjx-container)
                             page.wait_for_selector(".katex, mjx-container, svg", timeout=5000)
                         except PlaywrightTimeoutError:
                             print(
-                                "    -> [THÔNG_TIN] Trình duyệt đã bỏ qua pha kết xuất DOM toán học "
-                                "(Tài liệu không chứa công thức phức tạp hoặc thời gian Timeout kết thúc sớm)."
+                                "    -> [THÔNG_TIN] Trình duyệt đã hoàn tất kết xuất layout "
+                                "(Bỏ qua đợi mỏ neo DOM toán học)."
                             )
 
-                    # 4. Xuất bản tệp PDF chuẩn trang in qua Playwright API
                     page.pdf(
                         path=str(output_path),
                         format=self.layout_config.get("page_size", "A4"),
@@ -376,7 +513,6 @@ class PDFCompiler:
                 finally:
                     browser.close()
         finally:
-            # 5. Ràng buộc Chu trình Sống: Đảm bảo giải phóng tệp tạm
             if temp_path.exists():
                 try:
                     temp_path.unlink()
