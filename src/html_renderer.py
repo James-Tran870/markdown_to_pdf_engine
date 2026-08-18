@@ -1,7 +1,5 @@
 # ==============================================================================
-# TỆP: src/html_renderer.py (BỘ KẾT XUẤT HTML & HYBRID MATH ENGINE v2.3.0)
-# Dự án: markdown_to_pdf_engine
-# Kiến trúc: Python Dictionary Mapping (KaTeX) & Vector SVG Environment (MathJax v3)
+# TỆP 1: src/html_renderer.py (BỘ PHÂN RÃ AST DYNAMIC OBSIDIAN CALLOUTS v2.5.0)
 # ==============================================================================
 
 import base64
@@ -31,7 +29,7 @@ def _slugify_text(text: str) -> str:
 
 
 class HTMLRenderer:
-    """Bộ chuyển đổi AST sang HTML ngữ nghĩa hỗ trợ Kiến trúc Lai KaTeX & MathJax v3."""
+    """Bộ chuyển đổi AST sang HTML ngữ nghĩa hỗ trợ Dynamic Callouts, KaTeX & MathJax v3."""
 
     def __init__(
         self,
@@ -59,11 +57,9 @@ class HTMLRenderer:
         self.math_syntax_delimiters = math_syntax_delimiters or ["dollars", "brackets"]
         self.encoding_standard = encoding_standard
 
-        # Nạp DTO Cấu hình Rẽ nhánh Động cơ Toán học (v2.3.0)
         self.math_routing_config = math_routing_config or {"active_engine": "katex_placeholder"}
         self.active_engine = self.math_routing_config.get("active_engine", "katex_placeholder").lower()
 
-        # Nạp DTO Cấu hình KaTeX Offline
         self.katex_config = katex_config or {
             "enable_katex": True,
             "assets_dir": "assets/katex",
@@ -85,7 +81,6 @@ class HTMLRenderer:
             ],
         }
 
-        # Nạp DTO Cấu hình MathJax v3 Offline
         self.mathjax_config = mathjax_config or {
             "enable_mathjax": True,
             "assets_dir": "assets/mathjax",
@@ -96,7 +91,6 @@ class HTMLRenderer:
             "display_math_delimiters": [["$$", "$$"], ["\\[", "\\]"]],
         }
 
-        # Kho lưu trữ bảng băm ánh xạ văn bản Tiếng Việt trong công thức (Server-side Dictionary)
         self.vn_math_store: dict[str, str] = {}
         self._vn_mask_counter: int = 0
 
@@ -175,7 +169,9 @@ class HTMLRenderer:
 
         return masked_text
 
-    def _render_code_fence(self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]) -> str:
+    def _render_code_fence(
+        self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
+    ) -> str:
         """Cô lập khối mã 'fence', ngăn chặn rò rỉ ký tự < và >."""
         token = tokens[idx]
         code_content = token.content
@@ -193,7 +189,9 @@ class HTMLRenderer:
         formatter = HtmlFormatter(style=self.theme_name, noclasses=False)
         return highlight(code_content, lexer, formatter)
 
-    def _render_heading_anchors(self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]) -> str:
+    def _render_heading_anchors(
+        self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
+    ) -> str:
         """Gắn thuộc tính id chuẩn hóa ASCII và data-level vào các thẻ tiêu đề để tạo mỏ neo."""
         token = tokens[idx]
         if token.nesting == 1:
@@ -216,7 +214,9 @@ class HTMLRenderer:
             return f'<{token.tag} data-level="{level}">'
         return f"</{token.tag}>\n"
 
-    def _render_math_inline(self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]) -> str:
+    def _render_math_inline(
+        self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
+    ) -> str:
         """Đóng gói Nút toán nội dòng, giải mã Base64, tiêm giáp Tiếng Việt và mã hóa thực thể HTML."""
         token = tokens[idx]
         raw_content = token.content.strip()
@@ -242,7 +242,9 @@ class HTMLRenderer:
 
         return f'<span class="math-tex">${latex_content}$</span>'
 
-    def _render_math_block(self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]) -> str:
+    def _render_math_block(
+        self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
+    ) -> str:
         """Đóng gói Nút toán khối, giải mã Base64, tiêm giáp Tiếng Việt và mã hóa thực thể HTML."""
         token = tokens[idx]
         raw_content = token.content.strip()
@@ -267,6 +269,102 @@ class HTMLRenderer:
         latex_content = latex_content.replace("<", "&lt;").replace(">", "&gt;")
 
         return f'<div class="math-tex">$$\n{latex_content}\n$$</div>\n'
+
+    def _render_blockquote_open(
+        self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
+    ) -> str:
+        """Động cơ bóc tách Callouts chuẩn Obsidian/GFM Mở rộng (Hỗ trợ tiêu đề tùy biến & mọi định danh)."""
+        token = tokens[idx]
+        if token.meta is None:
+            token.meta = {}
+
+        # 1. Quét tìm vị trí thẻ đóng blockquote_close tương ứng
+        close_idx = -1
+        depth = 0
+        for i in range(idx, len(tokens)):
+            if tokens[i].type == "blockquote_open":
+                depth += 1
+            elif tokens[i].type == "blockquote_close":
+                depth -= 1
+                if depth == 0:
+                    close_idx = i
+                    break
+
+        # 2. Tìm token inline đầu tiên nằm trong khối
+        first_inline_idx = -1
+        for i in range(idx + 1, close_idx if close_idx != -1 else len(tokens)):
+            if tokens[i].type == "inline":
+                first_inline_idx = i
+                break
+
+        if first_inline_idx != -1:
+            inline_token = tokens[first_inline_idx]
+            raw_text = inline_token.content.lstrip()
+
+            # Pattern nhận diện chuẩn Obsidian Callouts: > [!type|identifier]+- Optional Title
+            callout_pattern = re.compile(
+                r"^\[!([a-zA-Z0-9_-]+)\]([+-]?)[ \t]*(.*)",
+                re.IGNORECASE,
+            )
+
+            # Lấy dòng đầu tiên để phân tích cú pháp
+            lines = raw_text.split("\n", 1)
+            first_line = lines[0]
+            match = callout_pattern.match(first_line)
+
+            if match:
+                callout_type = match.group(1).lower()
+                custom_title = match.group(3).strip()
+                display_title = custom_title if custom_title else callout_type.capitalize()
+
+                token.meta["is_alert"] = True
+                token.meta["alert_type"] = callout_type
+
+                if close_idx != -1:
+                    if tokens[close_idx].meta is None:
+                        tokens[close_idx].meta = {}
+                    tokens[close_idx].meta["is_alert"] = True
+
+                # Tái cấu trúc nội dung còn lại của inline token
+                remaining_content = lines[1] if len(lines) > 1 else ""
+                inline_token.content = remaining_content.lstrip()
+
+                # Tái cấu trúc children tokens để loại bỏ triệt để dòng [!type]
+                if inline_token.children:
+                    new_children = []
+                    found_first_break = False
+                    for child in inline_token.children:
+                        if not found_first_break:
+                            if child.type == "softbreak" or child.type == "hardbreak":
+                                found_first_break = True
+                            continue
+                        new_children.append(child)
+                    inline_token.children = new_children
+
+                # Khởi tạo khối HTML ngữ nghĩa hoàn chỉnh bao gồm thẻ tiêu đề độc lập
+                title_html = (
+                    f'  <div class="markdown-alert-title">\n'
+                    f'    <span class="markdown-alert-icon"></span>\n'
+                    f'    <span class="markdown-alert-label">{display_title}</span>\n'
+                    f'  </div>\n'
+                )
+
+                return (
+                    f'<div class="markdown-alert markdown-alert-{callout_type}" '
+                    f'data-callout="{callout_type}">\n{title_html}'
+                )
+
+        token.meta["is_alert"] = False
+        return "<blockquote>\n"
+
+    def _render_blockquote_close(
+        self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
+    ) -> str:
+        """Đóng thẻ div cho Callout hoặc thẻ blockquote tiêu chuẩn."""
+        token = tokens[idx]
+        if token.meta and token.meta.get("is_alert"):
+            return "</div>\n"
+        return "</blockquote>\n"
 
     def _generate_katex_assets_and_script(self) -> str:
         """Đóng gói KaTeX Offline với Thuật toán Python Dictionary Mapping & Client-Side Swap (v2.3.0)."""
@@ -326,18 +424,14 @@ class HTMLRenderer:
                 {"left": "\\(", "right": "\\)", "display": False},
             ]
         delimiters_json_str = json.dumps(raw_delimiters)
-
-        # Chuyển đổi từ điển Python mapping sang JSON client-side
         vn_map_json_str = json.dumps(self.vn_math_store, ensure_ascii=False)
 
-        # [LỚP GIÁP CLIENT-SIDE SWAP v2.3.0]: KaTeX đúc ASCII -> JS hoán đổi trả lại Tiếng Việt nguyên khối
         swap_script = f"""
         <script>
             document.addEventListener("DOMContentLoaded", function() {{
                 if (typeof renderMathInElement === "function") {{
                     var vnMap = {vn_map_json_str};
 
-                    // Bước 1: Cho KaTeX đúc DOM toán học với các chuỗi ASCII giữ chỗ
                     renderMathInElement(document.body, {{
                         delimiters: {delimiters_json_str},
                         strict: {strict_mode_str},
@@ -345,7 +439,6 @@ class HTMLRenderer:
                         trust: true
                     }});
 
-                    // Bước 2: Quét lại DOM KaTeX thành phẩm và hoán đổi trả lại văn bản Tiếng Việt nguyên bản
                     if (Object.keys(vnMap).length > 0) {{
                         var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
                         var node;
@@ -414,7 +507,6 @@ class HTMLRenderer:
         if js_content:
             mathjax_engine_script = f"<script>{js_content}</script>"
         else:
-            # Fallback nếu chưa tải tệp local tex-svg.js
             mathjax_engine_script = f'<script id="MathJax-script" async src="file:///{js_file.as_posix()}"></script>'
 
         return f"""
@@ -436,10 +528,11 @@ class HTMLRenderer:
         self.md_engine.add_render_rule("heading_close", self._render_heading_anchors)
         self.md_engine.add_render_rule("math_inline", self._render_math_inline)
         self.md_engine.add_render_rule("math_block", self._render_math_block)
+        self.md_engine.add_render_rule("blockquote_open", self._render_blockquote_open)
+        self.md_engine.add_render_rule("blockquote_close", self._render_blockquote_close)
 
     def convert_to_html(self, markdown_text: str) -> tuple[str, str]:
         """Thực thi chuyển đổi Markdown thành chuỗi HTML và StyleSheet CSS."""
-        # Reset bộ đếm mask và kho lưu trữ trước mỗi lần render tệp
         self.vn_math_store.clear()
         self._vn_mask_counter = 0
 
