@@ -1,7 +1,7 @@
 # ==============================================================================
 # MÔ-ĐUN KIỂM THỬ 04: DOCUMENT FEATURES & BOOKMARKS (test_04_document_features.py)
-# Dự án: markdown_to_pdf_engine (Phiên bản v2.4.0 - Typography & GFM Alerts)
-# Kiến trúc: GFM Tables, APA Standards, PyMuPDF Bookmarks & GFM Alerts Mesh
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.5.5 - Native Formula Box & Auto-Scale)
+# Kiến trúc: GFM Tables, APA Standards, PyMuPDF Bookmarks, GFM Alerts & Formula Box
 # ==============================================================================
 
 import shutil
@@ -22,7 +22,7 @@ from src.pdf_metadata_injector import MetadataInjector
 
 
 class DocumentFeaturesTests(unittest.TestCase):
-    """Mô-đun 04: Kiểm thử Bảng GFM, Tiêu đề mồ côi, Bookmarks PyMuPDF và GFM Alerts."""
+    """Mô-đun 04: Kiểm thử Bảng GFM, Tiêu đề mồ côi, Bookmarks PyMuPDF, GFM Alerts, Formula Box và CSS Paged Media."""
 
     def setUp(self) -> None:
         """Khởi tạo môi trường kiểm thử và các thực thể động cơ lõi."""
@@ -133,7 +133,7 @@ class DocumentFeaturesTests(unittest.TestCase):
                 output_pdf.unlink()
 
     def test_scenario_15_gfm_alerts_semantic_parsing_and_isolation(self) -> None:
-        """Scenario 15: Kiểm toán bóc tách cú pháp GFM Alerts và chống rò rỉ tiền tố (v2.4.0)."""
+        """Scenario 15: Kiểm toán bóc tách cú pháp GFM Alerts và chống rò rỉ tiền tố (v2.5.2)."""
         alerts_md = """
 > [!Note] MỤC TIÊU & CÂU HỎI KHAI PHÓNG
 >
@@ -155,12 +155,21 @@ class DocumentFeaturesTests(unittest.TestCase):
 """
         _css, rendered_html = self.renderer.convert_to_html(alerts_md)
 
-        # 1. Kiểm toán việc sinh đúng thẻ ngữ nghĩa div.markdown-alert
-        self.assertIn('<div class="markdown-alert markdown-alert-note">', rendered_html)
-        self.assertIn('<div class="markdown-alert markdown-alert-warning">', rendered_html)
-        self.assertIn('<div class="markdown-alert markdown-alert-tip">', rendered_html)
-        self.assertIn('<div class="markdown-alert markdown-alert-important">', rendered_html)
-        self.assertIn('<div class="markdown-alert markdown-alert-caution">', rendered_html)
+        # 1. Kiểm toán việc sinh đúng thẻ ngữ nghĩa và thuộc tính data-callout
+        self.assertIn('class="markdown-alert markdown-alert-note"', rendered_html)
+        self.assertIn('data-callout="note"', rendered_html)
+
+        self.assertIn('class="markdown-alert markdown-alert-warning"', rendered_html)
+        self.assertIn('data-callout="warning"', rendered_html)
+
+        self.assertIn('class="markdown-alert markdown-alert-tip"', rendered_html)
+        self.assertIn('data-callout="tip"', rendered_html)
+
+        self.assertIn('class="markdown-alert markdown-alert-important"', rendered_html)
+        self.assertIn('data-callout="important"', rendered_html)
+
+        self.assertIn('class="markdown-alert markdown-alert-caution"', rendered_html)
+        self.assertIn('data-callout="caution"', rendered_html)
 
         # 2. Kiểm toán việc triệt tiêu hoàn toàn tiền tố [!TYPE] khỏi văn bản con
         self.assertNotIn("[!Note]", rendered_html)
@@ -174,7 +183,7 @@ class DocumentFeaturesTests(unittest.TestCase):
         self.assertIn("<p>Đây là đoạn trích dẫn tiêu chuẩn thông thường không phải Alert.</p>", rendered_html)
 
     def test_scenario_16_inline_code_backtick_and_css_rules_verification(self) -> None:
-        """Scenario 16: Kiểm toán kết xuất chữ trong dấu Backtick và Ma trận CSS Paged Media (v2.4.0)."""
+        """Scenario 16: Kiểm toán kết xuất chữ trong dấu Backtick và Ma trận CSS Paged Media (v2.5.2)."""
         mixed_md = """
 ### `Thí nghiệm chữ trong dấu nháy ngược (Backtick)`
 
@@ -198,12 +207,49 @@ class DocumentFeaturesTests(unittest.TestCase):
         paged_media_css = self.compiler._build_paged_media_css(pygments_css)
 
         self.assertIn(":not(pre) > code", paged_media_css)
-        self.assertIn("rgba(175, 184, 193, 0.2)", paged_media_css)
+        self.assertIn("rgba(175, 184, 193, 0.22)", paged_media_css)
         self.assertIn("blockquote {", paged_media_css)
-        self.assertIn(".markdown-alert {", paged_media_css)
+        self.assertIn(".markdown-alert", paged_media_css)
+        self.assertIn("[data-callout]", paged_media_css)
         self.assertIn(".markdown-alert-note", paged_media_css)
         self.assertIn(".markdown-alert-warning", paged_media_css)
         self.assertIn("break-inside: avoid;", paged_media_css)
+
+        # 3. Kiểm toán cấu trúc CSS Khối mã nguồn Cascadia Code và Phòng thủ Trong suốt (v2.5.2)
+        self.assertIn(".highlight pre", paged_media_css)
+        self.assertIn("background-color: transparent !important;", paged_media_css)
+        self.assertIn("border: none !important;", paged_media_css)
+
+    def test_scenario_17_native_formula_box_and_css_rules_verification(self) -> None:
+        """Scenario 17: Kiểm toán Hộp Công Thức Độc Lập (.formula-box) và CSS Paged Media (v2.5.5)."""
+        formula_box_md = """
+<div class="formula-box">
+
+$$
+\\begin{aligned}
+\\text{Vấn đề 1:} \\quad & \\text{Chuỗi văn bản Tiếng Việt diễn giải dài} \\\\
+\\text{Vấn đề 2:} \\quad & f(x) = \\int_{a}^{b} \\sin(x^2) dx + \\text{Hằng số}
+\\end{aligned}
+$$
+
+</div>
+"""
+        pygments_css, rendered_html = self.renderer.convert_to_html(formula_box_md)
+
+        # 1. Kiểm toán việc bảo toàn thẻ vỏ HTML và bóc tách cấu trúc Toán học vô trùng
+        self.assertIn('<div class="formula-box">', rendered_html)
+        self.assertIn('class="math-tex"', rendered_html)
+        self.assertNotIn("&gt; [!NOTE]", rendered_html)
+        self.assertNotIn("&gt; [!Note]", rendered_html)
+
+        # 2. Kiểm toán Ma trận CSS của .formula-box trong Paged Media CSS
+        paged_media_css = self.compiler._build_paged_media_css(pygments_css)
+
+        self.assertIn(".formula-box {", paged_media_css)
+        self.assertIn(".formula-box::before {", paged_media_css)
+        self.assertIn("📐 Formula (Công Thức)", paged_media_css)
+        self.assertIn("border-left: 5px solid #0969da", paged_media_css)
+        self.assertIn("break-inside: avoid !important;", paged_media_css)
 
 
 if __name__ == "__main__":

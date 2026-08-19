@@ -1,7 +1,7 @@
 # ==============================================================================
 # TỆP : .gitignore
-# Dự án: markdown_to_pdf_engine (Phiên bản v2.3.0 - Zero-Trust Git Isolation)
-# Kiến trúc: Strict I/O Isolation, Test Output Shielding & Cache Blocking
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.5.8 - Zero-Trust Git Isolation)
+# Kiến trúc: Strict I/O Isolation, Test Shielding, Cache Blocking & AI Persona Guard
 # ==============================================================================
 
 # 1. BỘ NHỚ ĐỆM TRÌNH THÔNG DỊCH VÀ BỘ KIỂM TRA TĨNH (PYTHON, RUFF & PYTEST CACHE)
@@ -56,3 +56,14 @@ redteam_reports/
 *.stacktrace
 .env
 config.local.yaml
+
+# 7. CHỈ THỊ HỆ THỐNG AI, CẤU HÌNH AGENT CỤC BỘ VÀ PERSONA CONTRACTS (AI AGENT ISOLATION)
+# Chặn toàn bộ các tệp chỉ thị ngữ cảnh và thư mục lưu trữ trạng thái của Antigravity/Gemini
+GEMINI.md
+.gemini/
+.antigravity/
+.agy/
+AGENTS.md
+CLAUDE.md
+.cursorrules
+.windsurfrules
