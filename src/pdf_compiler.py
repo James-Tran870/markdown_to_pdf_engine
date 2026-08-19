@@ -1,7 +1,7 @@
 # ==============================================================================
-# TỆP: src/pdf_compiler.py (BỘ BIÊN DỊCH PDF & PAGED MEDIA WINDOWS 11 v2.5.1)
+# TỆP: src/pdf_compiler.py (BỘ BIÊN DỊCH PDF & PAGED MEDIA WINDOWS 11 v2.5.7)
 # Dự án: markdown_to_pdf_engine
-# Kiến trúc: Dynamic Layout DTO, Ephemeral Memory, Windows 11 Typography & Callouts
+# Kiến trúc: Native Formula Box, Khắc phục Ảo ảnh Viewport & Shrink-To-Fit Radar
 # ==============================================================================
 
 import tempfile
@@ -103,7 +103,7 @@ class PDFCompiler:
         """
 
     def _build_paged_media_css(self, pygments_css: str) -> str:
-        """Tạo lập bộ CSS Paged Media Windows 11 bao bọc Typography Song ngữ, Backtick và Obsidian Callouts."""
+        """Tạo lập bộ CSS Paged Media Windows 11 bao bọc Typography Song ngữ, Backtick, Callouts và Formula Box."""
         dynamic_counters_css = self._generate_css_counters()
 
         page_size = self.layout_config.get("page_size", "A4")
@@ -173,20 +173,26 @@ class PDFCompiler:
             white-space: pre-wrap; 
         }}
 
-        pre {{
-            page-break-inside: avoid;
-            break-inside: avoid;
-            text-align: left !important;
-            background-color: #f6f8fa;
-            border-radius: 6px;
-            padding: 12px;
-            border: 1px solid #e1e4e8;
-        }}
-
         .highlight {{
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 1em;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            text-align: left !important;
+        }}
+
+        .highlight pre {{
+            page-break-inside: avoid;
+            break-inside: avoid;
+            text-align: left !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background-color: transparent !important;
+            border: none !important;
+        }}
+
+        pre {{
             page-break-inside: avoid;
             break-inside: avoid;
             text-align: left !important;
@@ -437,6 +443,41 @@ class PDFCompiler:
             font-family: "Segoe UI", "Times New Roman", Arial, sans-serif !important;
             display: inline-block !important;
         }}
+
+        /* 9. HỘP CÔNG THỨC TOÁN HỌC ĐỘC LẬP (NATIVE FORMULA BOX) */
+        .formula-box {{
+            padding: 14px 18px 16px 18px !important;
+            margin: 1.5em 0 !important;
+            border: 1.5pt solid #0969da !important;
+            border-left: 5px solid #0969da !important;
+            background-color: rgba(9, 105, 218, 0.04) !important;
+            border-radius: 6px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            text-align: left !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+            position: relative !important;
+        }}
+
+        .formula-box::before {{
+            content: "📐 Formula (Công Thức)" !important;
+            display: block !important;
+            font-family: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", Arial, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 11pt !important;
+            color: #0969da !important;
+            margin-bottom: 10px !important;
+            border-bottom: 1px dashed rgba(9, 105, 218, 0.25) !important;
+            padding-bottom: 6px !important;
+            letter-spacing: 0.3px !important;
+        }}
+
+        .formula-box > .math-tex, 
+        .formula-box > div.math-tex, 
+        .formula-box > .katex-display {{
+            margin-top: 0.4em !important;
+            margin-bottom: 0.4em !important;
+        }}
         """
 
     def compile_to_pdf(
@@ -489,6 +530,7 @@ class PDFCompiler:
                         or '<div class="math-tex">' in html_content
                         or 'class="math-tex-b64"' in html_content
                         or 'MathJax' in html_content
+                        or 'formula-box' in html_content
                     ):
                         try:
                             page.wait_for_selector(".katex, mjx-container, svg", timeout=5000)
@@ -497,6 +539,49 @@ class PDFCompiler:
                                 "    -> [THÔNG_TIN] Trình duyệt đã hoàn tất kết xuất layout "
                                 "(Bỏ qua đợi mỏ neo DOM toán học)."
                             )
+
+                    # [NÂNG CẤP LÕI KẾT XUẤT 3.0]: Bơm Kịch bản Radar JS Ép khuôn Chân không (Shrink-to-Fit)
+                    js_script = """
+                        document.querySelectorAll('.katex-display, mjx-container[display="true"], div.math-tex').forEach(container => {
+                            // 1. Định vị phần tử đồ họa cốt lõi
+                            const coreElement = container.querySelector('.katex') 
+                                || container.querySelector('svg') 
+                                || container;
+                                
+                            // 2. KỸ THUẬT ÉP KHUÔN (SHRINK-TO-FIT): 
+                            // Tạm thời tước bỏ thuộc tính Block để vô hiệu hóa sự giãn nở ảo của Bounding Box
+                            const originalCssText = coreElement.style.cssText;
+                            coreElement.style.setProperty('display', 'inline-block', 'important');
+                            coreElement.style.setProperty('width', 'max-content', 'important');
+                            coreElement.style.setProperty('white-space', 'nowrap', 'important');
+                            
+                            // Trích xuất bề ngang vật lý chính xác đến từng điểm ảnh của các nét vẽ toán học
+                            const scrollWidth = Math.max(
+                                coreElement.scrollWidth || 0,
+                                coreElement.offsetWidth || 0,
+                                coreElement.getBoundingClientRect().width || 0
+                            );
+                            
+                            // Hoàn trả nguyên trạng thuộc tính hiển thị gốc
+                            coreElement.style.cssText = originalCssText;
+                            
+                            // 3. Quy đổi giới hạn in ấn
+                            const MAX_PRINTABLE_WIDTH_PX = MAX_WIDTH_MM_PLACEHOLDER * (96 / 25.4);
+                            
+                            const parentBox = container.closest('.formula-box') || container.parentElement;
+                            const clientWidth = parentBox ? parentBox.clientWidth : document.body.clientWidth;
+                            
+                            const safeWidth = Math.min(clientWidth, MAX_PRINTABLE_WIDTH_PX);
+                            
+                            // 4. Phán Quyết Thực Thi: Lệnh Zoom chỉ kích hoạt KHI VÀ CHỈ KHI công thức thực sự tràn lề
+                            if (scrollWidth > safeWidth && safeWidth > 0) {
+                                const scaleRatio = (safeWidth / scrollWidth) * 0.98;
+                                container.style.zoom = scaleRatio;
+                            }
+                        });
+                    """.replace("MAX_WIDTH_MM_PLACEHOLDER", str(self.table_config.get("max_printable_width_mm", 170)))
+
+                    page.evaluate(js_script)
 
                     page.pdf(
                         path=str(output_path),
