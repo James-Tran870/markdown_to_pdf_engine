@@ -23,6 +23,7 @@ class PDFCompiler:
         academic_config: dict[str, Any] | None = None,
         browser_config: dict[str, Any] | None = None,
         table_config: dict[str, Any] | None = None,
+        diagram_config: dict[str, Any] | None = None,
     ) -> None:
         """Khởi tạo động cơ PDF Compiler với tham số trang in, mã hóa, đánh số, học thuật, bảng biểu và Playwright."""
         self.output_encoding = output_encoding
@@ -47,6 +48,7 @@ class PDFCompiler:
             "repeat_header_on_page_break": True,
             "max_printable_width_mm": 170,
         }
+        self.diagram_config = diagram_config or {}
 
     def _generate_css_counters(self) -> str:
         """Xây dựng khối quy tắc CSS Counters tự động đếm và chèn số vào tiêu đề (Tối đa Cấp 4)."""
@@ -139,6 +141,16 @@ class PDFCompiler:
             text-align: left !important;
             margin-top: 0.4em;
             margin-bottom: 0.8em;
+        }}
+
+        /* 1.5. ĐƯỜNG KẺ PHÂN CÁCH (HORIZONTAL RULE) THẨM MỸ NÂNG CAO */
+        hr {{
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(208,215,222,0.1) 0%, rgba(9,105,218,0.7) 50%, rgba(208,215,222,0.1) 100%);
+            margin: 2.5em 0;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(9,105,218,0.15);
         }}
 
         /* 2. CẤU HÌNH TIÊU ĐỀ TYPOGRAPHY APA / IEEE CHO WINDOWS 11 */
@@ -434,10 +446,7 @@ class PDFCompiler:
             display: inline-block !important;
         }}
 
-        svg {{
-            max-width: 100%;
-            height: auto;
-        }}
+        /* Đã xóa bỏ rào chắn svg max-width toàn cục để cho phép Mermaid/D2 phình to tự nhiên, kích hoạt Cửa sổ trượt */
 
         .vietnamese-math-text {{
             font-family: "Segoe UI", "Times New Roman", Arial, sans-serif !important;
@@ -509,6 +518,7 @@ class PDFCompiler:
             encoding=self.output_encoding,
             suffix=".html",
             delete=False,
+            dir=str(Path.cwd()),
         ) as temp_file:
             temp_file.write(full_document)
             temp_path = Path(temp_file.name)
@@ -516,7 +526,8 @@ class PDFCompiler:
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
+                page = browser.new_page(viewport={"width": 794, "height": 1122})
+                page.on("console", lambda m: print(f"PLAYWRIGHT CONSOLE: {m.type} - {m.text}") ); page.on("requestfailed", lambda r: print(f"REQ_FAIL: {r.url} - {r.failure}"))
 
                 try:
                     page.goto(
@@ -538,6 +549,16 @@ class PDFCompiler:
                             print(
                                 "    -> [THÔNG_TIN] Trình duyệt đã hoàn tất kết xuất layout "
                                 "(Bỏ qua đợi mỏ neo DOM toán học)."
+                            )
+
+                    if 'class="mermaid"' in html_content or 'mermaid-wrapper' in html_content:
+                        try:
+                            page.wait_for_selector(".mermaid-wrapper svg", timeout=5000)
+                            page.wait_for_timeout(500)
+                        except PlaywrightTimeoutError:
+                            print(
+                                "    -> [THÔNG_TIN] Trình duyệt đã hoàn tất kết xuất layout "
+                                "(Bỏ qua đợi mỏ neo DOM Mermaid)."
                             )
 
                     # [NÂNG CẤP LÕI KẾT XUẤT 3.0]: Bơm Kịch bản Radar JS Ép khuôn Chân không (Shrink-to-Fit)
@@ -583,6 +604,53 @@ class PDFCompiler:
 
                     page.evaluate(js_script)
 
+                    if self.diagram_config.get("enable_diagram_segmentation", True):
+                        sliding_viewport_script = """
+                            const MAX_SAFE_HEIGHT_MM = 245; // Chiều cao in an toàn (Trừ Margin)
+                            const MAX_SAFE_HEIGHT_PX = MAX_SAFE_HEIGHT_MM * (96 / 25.4);
+                            
+                            document.querySelectorAll('.diagram-wrapper').forEach(container => {
+                                // Tìm thẻ SVG bên trong
+                                const svgEl = container.querySelector('svg');
+                                const scrollHeight = svgEl ? svgEl.getBoundingClientRect().height : (container.scrollHeight || container.getBoundingClientRect().height);
+                                
+                                if (scrollHeight > MAX_SAFE_HEIGHT_PX) {
+                                    const N = Math.ceil(scrollHeight / MAX_SAFE_HEIGHT_PX);
+                                    const parent = container.parentNode;
+                                    
+                                    for (let i = 0; i < N; i++) {
+                                        const segmentWrapper = document.createElement('div');
+                                        segmentWrapper.className = container.className + ' segmented-diagram';
+                                        segmentWrapper.style.height = MAX_SAFE_HEIGHT_PX + 'px';
+                                        segmentWrapper.style.overflow = 'hidden';
+                                        segmentWrapper.style.pageBreakAfter = 'always';
+                                        segmentWrapper.style.breakAfter = 'page';
+                                        segmentWrapper.style.position = 'relative';
+                                        segmentWrapper.style.display = 'block';
+                                        segmentWrapper.style.marginTop = i === 0 ? '1.5em' : '0';
+                                        segmentWrapper.style.marginBottom = i === N - 1 ? '1.5em' : '0';
+                                        
+                                        const innerMover = document.createElement('div');
+                                        
+                                        // Kỹ thuật Clone Node: Giữ nguyên vẹn toàn bộ thuộc tính height và SVG render state
+                                        Array.from(container.childNodes).forEach(child => {
+                                            innerMover.appendChild(child.cloneNode(true));
+                                        });
+                                        
+                                        innerMover.style.marginTop = `-${i * MAX_SAFE_HEIGHT_PX}px`;
+                                        innerMover.style.width = '100%';
+                                        innerMover.style.height = `${scrollHeight}px`;
+                                        
+                                        segmentWrapper.appendChild(innerMover);
+                                        parent.insertBefore(segmentWrapper, container);
+                                    }
+                                    
+                                    parent.removeChild(container);
+                                }
+                            });
+                        """
+                        page.evaluate(sliding_viewport_script)
+
                     page.pdf(
                         path=str(output_path),
                         format=self.layout_config.get("page_size", "A4"),
@@ -607,3 +675,4 @@ class PDFCompiler:
         print(
             f"[THÀNH_CÔNG] Đã xuất bản tệp PDF sắc nét qua Chromium tại: {output_path}"
         )
+

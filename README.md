@@ -1,14 +1,14 @@
-# MARKDOWN TO PDF ENGINE (Lõi Biên dịch Tài liệu Cục bộ, Động cơ Toán học Lai, Dynamic Obsidian Callouts & Native Formula Box - Phiên bản v2.5.8)
+# MARKDOWN TO PDF ENGINE (Lõi Biên dịch Tài liệu Cục bộ, Động cơ Toán học Lai, Khổ Giấy Lai Động, Dynamic Obsidian Callouts & Native Formula Box - Phiên bản v2.6.0)
 
-Một hệ thống đường ống dữ liệu (**Data Pipeline**) tự động hóa toàn diện, chuyên trách chuyển đổi hàng loạt tệp Markdown phức tạp sang định dạng PDF chuẩn Typography xuất bản thương mại. Hệ thống tích hợp **Kiến trúc Động cơ Toán học Lai (Hybrid Math Engine Architecture)** cho phép rẽ nhánh giữa đúc DOM KaTeX tốc độ cao và đúc Đồ họa Vector SVG MathJax v3 ngoại tuyến sắc nét, xử lý bảng biểu GFM khung lưới hoàn chỉnh, đúc mộc **Động cơ Obsidian Callouts Động** đa sắc thái, làm chủ kỹ thuật **Hộp Công Thức Bản Địa (Native Formula Box)** kết hợp thuật toán **Radar Co Giãn Tự Động (JS Auto-Scale Radar với kỹ thuật Shrink-to-Fit)**, phủ giáp hệ phông chữ **Typography Windows 11 Bản địa (Cascadia Code & Segoe UI Variable)**, cùng cây mỏ neo điều hướng **Bookmarks nhị phân Cấp 6** ngay trên môi trường máy trạm cục bộ.
+Một hệ thống đường ống dữ liệu (**Data Pipeline**) tự động hóa toàn diện, chuyên trách chuyển đổi hàng loạt tệp Markdown phức tạp sang định dạng PDF chuẩn Typography xuất bản thương mại. Hệ thống tích hợp **Kiến trúc Động cơ Toán học Lai (Hybrid Math Engine Architecture)** cho phép rẽ nhánh giữa đúc DOM KaTeX tốc độ cao và đúc Đồ họa Vector SVG MathJax v3 ngoại tuyến sắc nét. Phiên bản mới nhất đột phá với **Kiến trúc Khổ Giấy Lai Động (Hybrid Paged Media)** cho phép chèn khổ A3 Nằm Ngang vào giữa tài liệu A4 Dọc, xử lý bảng biểu GFM khung lưới hoàn chỉnh, đúc mộc **Động cơ Obsidian Callouts Động** đa sắc thái, làm chủ kỹ thuật **Hộp Công Thức Bản Địa (Native Formula Box)** kết hợp thuật toán **Radar Co Giãn Tự Động (JS Auto-Scale Radar)**, phủ giáp hệ phông chữ **Typography Windows 11 Bản địa (Cascadia Code & Segoe UI Variable)** và **Thẩm Mỹ Vi Mô (Micro-Aesthetics)** cho đường phân cách, cùng cây mỏ neo điều hướng **Bookmarks nhị phân Cấp 6** ngay trên môi trường máy trạm cục bộ.
 
-Dự án được xây dựng dựa trên tư duy phân tách hệ thống nghiêm ngặt (**Separation of Concerns - SoC**), khép kín và độc lập ngoại tuyến (**Offline-first**). Hệ thống nói KHÔNG với các dịch vụ đám mây (Cloud API), máy chủ web bên ngoài hay cơ sở dữ liệu phức tạp. Mọi tiến trình biên dịch đều diễn ra hoàn toàn trên máy tính cá nhân, bảo đảm tính bảo mật dữ liệu tuyệt đối, thiết lập ranh giới phòng thủ cách ly môi trường tác tử AI (**AI Environment Isolation**) và duy trì khả năng can thiệp tham số linh hoạt thông qua hệ thống cấu hình DTO Pydantic v2 tách biệt.
+Dự án được xây dựng dựa trên tư duy phân tách hệ thống nghiêm ngặt (**Separation of Concerns - SoC**), khép kín và độc lập ngoại tuyến (**Offline-first**). Hệ thống nói KHÔNG với các dịch vụ đám mây (Cloud API), máy chủ web bên ngoài hay cơ sở dữ liệu phức tạp. Tuân thủ tuyệt đối **Chính sách Không Rác (Zero-Trash Architecture)**, mọi tiến trình biên dịch đều diễn ra hoàn toàn trên máy tính cá nhân, bảo đảm tính bảo mật dữ liệu tuyệt đối, thiết lập ranh giới phòng thủ cách ly môi trường tác tử AI (**AI Environment Isolation**) và duy trì khả năng can thiệp tham số linh hoạt thông qua hệ thống cấu hình DTO Pydantic v2 tách biệt.
 
 ---
 
-## CHƯƠNG 1: TRIẾT LÝ KIẾN TRÚC VÀ 10 TRỤ CỘT PHÒNG THỦ (ARCHITECTURAL PHILOSOPHY v2.5.8)
+## CHƯƠNG 1: TRIẾT LÝ KIẾN TRÚC VÀ 12 TRỤ CỘT PHÒNG THỦ (ARCHITECTURAL PHILOSOPHY v2.6.0)
 
-Để hình dung phương thức vận hành của hệ thống, hãy tưởng tượng dự án giống như một **Xưởng In ấn Đồ họa Hiện đại Khép kín**. Thay vì cho phép công nhân tự do can thiệp thủ công vào dây chuyền, xưởng vận hành dựa trên 10 trụ cột kiến trúc bất biến nhằm loại trừ hoàn toàn mọi rủi ro gián đoạn tiến trình, biến dạng công thức toán hay đứt gãy mỹ thuật:
+Để hình dung phương thức vận hành của hệ thống, hãy tưởng tượng dự án giống như một **Xưởng In ấn Đồ họa Hiện đại Khép kín**. Thay vì cho phép công nhân tự do can thiệp thủ công vào dây chuyền, xưởng vận hành dựa trên 12 trụ cột kiến trúc bất biến nhằm loại trừ hoàn toàn mọi rủi ro gián đoạn tiến trình, biến dạng công thức toán hay đứt gãy mỹ thuật:
 
 ### 1. Phân tách Mối quan tâm (SoC) & Truyền dẫn Dữ liệu Động (Pydantic DTO & Dynamic Unpacking - v2.3.0)
 
@@ -68,7 +68,7 @@ Dự án được xây dựng dựa trên tư duy phân tách hệ thống nghi�
 
 - **Ma trận CSS Callouts Phân tầng:** Thiết lập kiểu dáng nền tảng toàn năng cho bộ chọn `[data-callout]` với cơ chế phòng thủ in ấn `break-inside: avoid;`, bảo đảm Playwright Chromium không xẻ đôi khối cảnh báo qua hai trang giấy vật lý.
 
-### 9. Động Cơ Hộp Công Thức Bản Địa & Thuật Toán Radar Co Giãn Tự Động (Native Formula Box & JS Auto-Scale Radar with Shrink-to-Fit - MỚI v2.5.7)
+### 9. Động Cơ Hộp Công Thức Bản Địa & Thuật Toán Radar Co Giãn Tự Động (Native Formula Box & JS Auto-Scale Radar with Shrink-to-Fit - MỚI v2.6.0)
 
 - **Ẩn dụ đời thực:** Khi in các biểu đồ hoặc bảng cân đối kế toán đặc thù, nếu đặt chúng vào một khung trích dẫn văn bản thông thường, khung sẽ tự động chèn thêm các ký tự viền làm gãy nát cấu trúc số liệu. Xưởng in quyết định đúc riêng một **Khung Trưng Bày Độc Lập Chống Rách (Native Formula Box)** có viền sắc nét, tiêu đề định danh và khóa cứng chống cắt đôi giữa hai trang. Đồng thời, thợ in trang bị một **Thước Đo Quang Học Tự Động Co Giãn (Auto-Scale Radar)**: Trước khi in, thước đo sẽ ép đối tượng nhả đúng kích thước vật lý thực sự (loại bỏ khoảng đệm ảo của khung nhìn máy tính), chỉ khi nào công thức thực sự vượt quá chiều rộng trang A4 (642px) thì thợ in mới kích hoạt kính thu phóng quang học (`zoom`) để ép vừa vặn trang in mà không làm thu nhỏ oan uổng các công thức ngắn.
 
@@ -76,17 +76,31 @@ Dự án được xây dựng dựa trên tư duy phân tách hệ thống nghi�
   - **Hộp Công Thức Bản Địa (`.formula-box`):** Thay thế việc đặt công thức toán vào khối Callout `> [!NOTE]` (vốn gây lỗi nuốt ký tự `>` vào AST của plugin `texmath`) bằng thẻ HTML nguyên khối `<div class="formula-box">`. Lớp CSS này được trang bị viền xám sáng `border: 1px solid #d0d7de;`, nền mờ `background-color: #f6f8fa;`, bóng đổ nhẹ `box-shadow: 0 1px 3px rgba(0,0,0,0.05);`, nhãn tiêu đề tự động qua pseudo-element `::before`, và khóa in ấn `page-break-inside: avoid;`.
   - **Thuật Toán JS Radar & Kỹ Thuật Shrink-to-Fit:** Giải quyết dứt điểm lỗi **"Block-Level Stretch"** của Chromium Headless (nơi thẻ KaTeX Display dạng khối tự động giãn rộng bằng Viewport ảo 1280px khiến hệ thống nhận diện nhầm là bị tràn lề). Script JavaScript trước khi in sẽ tạm thời tiêm style `display: inline-block; width: max-content; white-space: nowrap;` vào từng phần tử KaTeX, đo chính xác chiều rộng vật lý thực (`scrollWidth`), hoàn trả style gốc và chỉ áp dụng thuộc tính `zoom = (642 / scrollWidth)` khi chiều rộng thực tế vượt quá ranh giới an toàn 642px.
 
-### 10. Cách Ly Môi Trường Tác Tử Trí Tuệ Nhân Tạo & Phòng Thủ Ranh Giới (AI Agent Environment Isolation & Git Security Boundary - MỚI v2.5.8)
+### 10. Cách Ly Môi Trường Tác Tử Trí Tuệ Nhân Tạo & Phòng Thủ Ranh Giới (AI Agent Environment Isolation & Git Security Boundary - MỚI v2.6.0)
 
 - **Ẩn dụ đời thực:** Trong một viện nghiên cứu công nghệ cao, hồ sơ lưu trữ kịch bản hoạt động của các rô-bốt cố vấn (Agent System Persona) và các bản ghi bộ nhớ tạm thời của trí tuệ nhân tạo phải được bảo vệ trong một **Phòng Két Khóa Kín Tuyệt Đối**. Các tài liệu này tuyệt đối không được đóng gói chung vào các kiện hàng xuất xưởng ra bên ngoài để tránh làm rò rỉ cấu hình và làm ô nhiễm dữ liệu của người dùng thương mại.
 
 - **Áp dụng vào hệ thống:** Thiết lập phân khu bảo mật Số 7 trong `.gitignore` mang tên **AI Environment Isolation & Context Files**. Hệ thống cách ly tuyệt đối toàn bộ các tệp chỉ thị tác tử (`GEMINI.md`, `.cursorrules`, `.windsurfrules`, `.clinerules`), thư mục cấu hình và bộ nhớ đệm tác tử (`.gemini/`, `.antigravity/`, `.ai/`, `.context/`). Điều này bảo đảm cây Git của dự án luôn thuần khiết, bảo mật tuyệt đối các quy tắc vận hành nội bộ và ngăn chặn mọi sự cố rò rỉ cấu hình khi đẩy mã nguồn lên các nền tảng máy chủ mã nguồn mở như GitHub.
 
+### 11. Kiến Trúc Khổ Giấy Lai Động (Hybrid Paged Media Architecture - MỚI v2.6.0)
+
+- **Ẩn dụ đời thực:** Trong một cuốn tạp chí ảnh cao cấp, hầu hết các trang đều được in theo khổ dọc tiêu chuẩn để dễ cầm nắm. Tuy nhiên, khi lật đến một bức ảnh toàn cảnh (Panorama) hoặc một bản đồ rộng lớn, nhà in lồng vào một "Trang gấp đôi" (Centerfold) khổ ngang có thể mở rộng ra. Độc giả không cần lấy kéo cắt nát bức ảnh rồi dán lại, mà chỉ việc thưởng thức trọn vẹn sự đồ sộ của nó ngay giữa lòng cuốn tạp chí.
+
+- **Áp dụng vào hệ thống:** Giải quyết triệt để nghịch lý của hệ thống PDF khi đối mặt với các sơ đồ đồ thị mạng (như D2) phình to vô cực theo chiều ngang (lên tới 5000px). Nếu bóp nghẹt xuống khổ A4 Dọc (210mm), sơ đồ trở nên siêu nhỏ không thể đọc nổi. Nếu mở rộng kích thước toàn bộ tệp PDF (Dynamic Page Size) lên mức 5000px, động cơ Chromium sẽ sụp đổ vì tràn bộ nhớ RAM (OOM - Out of Memory >5GB). Hệ thống đã áp dụng kỹ thuật tiêm CSS Paged Media `@page d2_landscape { size: A3 landscape; }` cục bộ dành riêng cho khối SVG của D2. Trình duyệt sẽ tự động xoay ngang và nâng cấp độc lập trang chứa đồ thị đó lên khổ A3 Nằm Ngang (420mm - rộng gấp đôi A4), cung cấp không gian bao la để chiêm ngưỡng đồ thị mà vẫn giữ nguyên khổ A4 cho các trang còn lại, không tạo ra gánh nặng cho bộ nhớ RAM.
+
+### 12. Tiêu Chuẩn Thẩm Mỹ Vi Mô & Kiến Trúc Không Rác (Micro-Aesthetics & Zero-Trash Policy - MỚI v2.6.0)
+
+- **Ẩn dụ đời thực:** Một xưởng in đẳng cấp không chỉ in đúng chữ, mà thợ in còn tỉ mỉ đánh bóng từng đường gân chỉ mạ vàng để tạo nên vẻ đẹp xa xỉ (Micro-Aesthetics). Tuy nhiên, sau khi ra thành phẩm, phân xưởng tuyệt đối không được để lại giẻ lau, vỏ hộp hay bản nháp vứt lăn lóc trên sàn nhà (Zero-Trash).
+
+- **Áp dụng vào hệ thống:**
+  - **Thẩm Mỹ Vi Mô (Micro-Aesthetics):** Các thành phần HTML tưởng chừng như mặc định và thô kệch (như đường kẻ ngang `<hr>`) được cấu trúc lại hoàn toàn bằng mã CSS Linear Gradient (Chuyển sắc mượt mà từ lề vào trung tâm với tone màu xanh `#0969da`) kết hợp đổ bóng quang học (Optical Drop Shadow), nâng tầm ấn phẩm PDF lên chuẩn mực tạp chí xuất bản chuyên nghiệp.
+  - **Kiến Trúc Không Rác (Zero-Trash):** Hệ thống nghiêm cấm sự tồn tại của các thư mục nháp như `scratch/` bên trong không gian làm việc chính. Tích hợp cơ chế tự động dọn dẹp các tệp HTML trung gian `tmp_*.html` ngay cả khi Chromium Headless bị sập nguồn, đảm bảo vùng nguyên liệu (Repo) luôn giữ được độ nguyên sơ (Purity) tuyệt đối của một dự án công nghiệp.
+
 ---
 
-## CHƯƠNG 2: BẢN ĐỒ CẤU TRÚC THƯ MỤC (DIRECTORY BLUEPRINT v2.5.8)
+## CHƯƠNG 2: BẢN ĐỒ CẤU TRÚC THƯ MỤC (DIRECTORY BLUEPRINT v2.6.0)
 
-Dưới đây là sơ đồ không gian làm việc (**Workspace Blueprint**) tiêu chuẩn trên Visual Studio Code cho phiên bản v2.5.8. Mỗi thành phần đều duy trì ranh giới trách nhiệm duy nhất (**Single Responsibility Principle - SoC**) và tuân thủ nghiêm ngặt chuẩn Zero-Trust:
+Dưới đây là sơ đồ không gian làm việc (**Workspace Blueprint**) tiêu chuẩn trên Visual Studio Code cho phiên bản v2.6.0. Mỗi thành phần đều duy trì ranh giới trách nhiệm duy nhất (**Single Responsibility Principle - SoC**) và tuân thủ nghiêm ngặt chuẩn Zero-Trust:
 
 ```text
 MARKDOWN_TO_PDF_ENGINE/
@@ -113,7 +127,7 @@ MARKDOWN_TO_PDF_ENGINE/
 │   ├── __init__.py            # Khởi tạo gói mã nguồn nội bộ.
 │   ├── ast_parser.py          # (Giai đoạn 1) Quét AST (gfm-like) & dán mặt nạ băm SHA-256 bảo vệ khối mã.
 │   ├── html_renderer.py       # (Giai đoạn 2) Can thiệp AST Callouts Động, Python Mapping & Mỏ neo.
-│   ├── pdf_compiler.py        # (Giai đoạn 3 - v2.5.7) Native Formula Box, JS Shrink-to-Fit Radar & Typography.
+│   ├── pdf_compiler.py        # (Giai đoạn 3 - v2.6.0) Native Formula Box, JS Shrink-to-Fit Radar & Typography.
 │   └── pdf_metadata_injector.py # (Giai đoạn 4) Quét nhị phân PyMuPDF, nội suy vị trí & tiêm Bookmarks Cấp 6.
 │
 ├── tests/                     # [Bộ Kiểm Thử Mô-đun Pytest] Hệ thống 6 tệp test hộp trắng biệt lập (25 Scenarios).
@@ -121,20 +135,20 @@ MARKDOWN_TO_PDF_ENGINE/
 │   ├── test_01_core_pipeline.py     # [Test 01] Kiểm thử I/O, quét đệ quy, cô lập tệp hỏng & batch processing.
 │   ├── test_02_schema_layout.py     # [Test 02] Kiểm thử Pydantic DTO, YAML validation & A4 margin rules.
 │   ├── test_03_math_base64.py       # [Test 03] Kiểm thử KaTeX Placeholder Swap, MathJax SVG & Unicode Tiếng Việt.
-│   ├── test_04_document_features.py # [Test 04 - v2.5.7] Bookmarks Cấp 6, Dynamic Callouts & Native Formula Box.
+│   ├── test_04_document_features.py # [Test 04 - v2.6.0] Bookmarks Cấp 6, Dynamic Callouts & Native Formula Box.
 │   ├── test_05_concurrency_stress.py# [Test 05] Kiểm thử ProcessPoolExecutor, tempfile bộ nhớ tạm & Playwright.
 │   └── test_06_hybrid_math_engine.py# [Test 06] Kiểm thử DTO Routing Validation, Python Mapping & SVG Boundaries.
 │
 ├── .gitignore                 # Chỉ thị phòng thủ Git cách ly I/O, cache, tempfile, venv và tệp ngữ cảnh AI.
 ├── GEMINI.md                  # [AI Operational Contract] Thỏa ước vận hành cố vấn chỉ đọc & tiêu chuẩn dự án.
 ├── main.py                    # [Quản Đốc Băng Chuyền] Điều phối Pipeline, xác thực Pydantic DTO & Unpacking DTO.
-├── README.md                  # Cẩm nang vận hành và bản thiết kế kiến trúc toàn diện v2.5.8.
+├── README.md                  # Cẩm nang vận hành và bản thiết kế kiến trúc toàn diện v2.6.0.
 └── requirements.txt           # Bảng kê vật tư thư viện phụ thuộc (Playwright, Pydantic v2, PyMuPDF, Pytest).
 ```
 
-### Phân tích Chức năng Chi tiết Từng Thành phần Mã nguồn (v2.5.8)
+### Phân tích Chức năng Chi tiết Từng Thành phần Mã nguồn (v2.6.0)
 
-- **`assets/katex/` & `assets/mathjax/`:** Kho lưu trữ bộ tài nguyên tĩnh ngoại tuyến của KaTeX và MathJax v3. Đảm bảo hệ thống biên dịch công thức toán sắc nét 100% mà không cần kết nối Internet.
+- **`assets/katex/` & `assets/mathjax/`:** Kho lưu trữ bộ tài nguyên tĩnh ngoại tuyến của KaTeX và MathJax v3. Toàn bộ 34 tệp phông chữ nhị phân (`.woff2`, `.ttf`) của KaTeX đã được tải xuống và cấp đông hoàn toàn. Đảm bảo hệ thống biên dịch công thức toán sắc nét 100% mà không cần bất kỳ kết nối Internet nào, triệt tiêu lỗi thiếu hụt font chữ Cục bộ (Local Font Provisioning).
 
 - **`config/settings.yaml`:** Trái tim cấu hình của dự án. Quản lý 13 phân khu tham số, bao gồm hai phân khu rẽ nhánh `math_engine_routing` và `mathjax_offline_config`.
 
@@ -142,15 +156,15 @@ MARKDOWN_TO_PDF_ENGINE/
 
 - **`src/ast_parser.py`:** Đảm nhiệm **Giai đoạn 1**. Sử dụng `markdown-it-py` với preset `commonmark` mở rộng. Áp dụng cơ chế Băm Mật mã SHA-256 (`_unify_math_delimiters`) để che phủ khối mã nguồn và chuyển đổi cú pháp Brackets (`\[...\]`) sang Dollars (`$$`).
 
-- **`src/html_renderer.py`:** Đảm nhiệm **Giai đoạn 2**. Thực thi thuật toán **Can thiệp Vòng đời AST Callout Động** bóc tách mọi biến thể Callout/Alert, loại bỏ triệt để cú pháp thô khỏi thẻ `<p>`, và sinh cấu trúc thẻ tiêu đề ngữ nghĩa `<div class="markdown-alert-title">`. Đồng thời duy trì thuật toán **Server-Side Python Dictionary Mapping** cho KaTeX và tích hợp đối tượng môi trường Vector SVG cho MathJax v3.
+- **`src/html_renderer.py`:** Đảm nhiệm **Giai đoạn 2**. Thực thi thuật toán **Can thiệp Vòng đời AST Callout Động** bóc tách mọi biến thể Callout/Alert, loại bỏ triệt để cú pháp thô khỏi thẻ `<p>`, và sinh cấu trúc thẻ tiêu đề ngữ nghĩa `<div class="markdown-alert-title">`. Hệ thống tích hợp tính năng **Can thiệp Chỉ thị Hướng Đồ thị (Direction Force)** tự động tiêm cờ `direction: down` vào cấu trúc sơ đồ D2, ép buộc đồ thị mở rộng theo chiều dọc để tối ưu thuật toán cắt trang của PDF. Đồng thời duy trì thuật toán **Server-Side Python Dictionary Mapping** cho KaTeX và tích hợp đối tượng môi trường Vector SVG cho MathJax v3.
 
-- **`src/pdf_compiler.py` (Phiên bản nâng cấp v2.5.7):** Đảm nhiệm **Giai đoạn 3**. Cấp phát tệp tạm vô danh qua `tempfile.NamedTemporaryFile` và khởi chạy Playwright Chromium trong môi trường **Security Sandbox** an toàn. Thiết lập hệ thống CSS cho Hộp công thức bản địa `.formula-box`, tiêm script **JS Auto-Scale Radar với kỹ thuật Shrink-to-Fit** giải quyết triệt để lỗi co chữ siêu nhỏ, áp dụng Typography Windows 11 với bộ phông chữ `"Cascadia Code"`, `"Segoe UI Variable Text"`, Ma trận Callout đa tầng sắc nét, và rào chắn chống xẻ đôi khối in `break-inside: avoid;`.
+- **`src/pdf_compiler.py` (Phiên bản nâng cấp v2.6.0):** Đảm nhiệm **Giai đoạn 3**. Cấp phát tệp tạm vô danh qua `tempfile.NamedTemporaryFile` (đã được bọc khiên vòng đời dọn dẹp chống rác HTML) và khởi chạy Playwright Chromium trong môi trường **Security Sandbox** an toàn. Thiết lập hệ thống CSS đột phá với **Khổ Giấy Lai Động (Hybrid Paged Media)** cho phép tiêm trang A3 Landscape giữa các trang A4 Portrait, tiêm script **JS Auto-Scale Radar với kỹ thuật Shrink-to-Fit**, áp dụng Typography Windows 11 (`Cascadia Code`, `Segoe UI Variable Text`), tái cấu trúc **Thẩm Mỹ Vi Mô (Micro-Aesthetics)** cho đường `<hr>`, Ma trận Callout đa tầng sắc nét, và rào chắn chống xẻ đôi khối in `break-inside: avoid;`.
 
 - **`src/pdf_metadata_injector.py`:** Đảm nhiệm **Giai đoạn 4**. Tiếp nhận chuỗi HTML trung gian, bóc tách cấu trúc thẻ `<hX data-level="...">` từ Cấp 1 đến Cấp 6, sử dụng **PyMuPDF (`fitz`)** quét vị trí văn bản trên PDF vật lý và tiêm Cây Mục lục nhị phân hoàn chỉnh.
 
 - **`tests/test_01_*.py` đến `test_06_*.py`:** Hệ thống bộ kiểm thử mô-đun biệt lập gồm 25 kịch bản tự động hóa vận hành bởi `pytest`. Trong đó, tệp `test_04_document_features.py` được bổ sung Kịch bản 17 (`Scenario 17`) kiểm toán độc lập cấu trúc Native Formula Box và các quy tắc CSS Paged Media.
 
-- **`.gitignore` (Nâng cấp v2.5.8):** Chỉ thị phòng thủ Git cách ly 100% thư mục nguyên liệu `input/`, thành phẩm `output/`, bộ nhớ đệm Ruff, pytest, tệp tạm thời `tempfile`, môi trường ảo `venv/` và toàn bộ các tệp chỉ thị/ngữ cảnh của tác tử AI (`GEMINI.md`, `.gemini/`, `.cursorrules`).
+- **`.gitignore` (Nâng cấp v2.6.0):** Chỉ thị phòng thủ Git cách ly 100% thư mục nguyên liệu `input/`, thành phẩm `output/`, bộ nhớ đệm Ruff, pytest, tệp tạm thời `tempfile`, môi trường ảo `venv/` và toàn bộ các tệp chỉ thị/ngữ cảnh của tác tử AI (`GEMINI.md`, `.gemini/`, `.cursorrules`).
 
 - **`GEMINI.md`:** Hợp đồng vận hành AI quy định chế độ Cố vấn chỉ đọc (Read-Only Advisor), cấm tự ý sửa file trên đĩa và chuẩn hóa phong cách kỹ thuật của tác tử.
 
@@ -158,7 +172,7 @@ MARKDOWN_TO_PDF_ENGINE/
 
 ---
 
-## CHƯƠNG 3: HƯỚNG DẪN THIẾT LẬP MÔI TRƯỜNG VÀ HẠ TẦNG THỰC THI (ENVIRONMENT & INFRASTRUCTURE v2.5.8)
+## CHƯƠNG 3: HƯỚNG DẪN THIẾT LẬP MÔI TRƯỜNG VÀ HẠ TẦNG THỰC THI (ENVIRONMENT & INFRASTRUCTURE v2.6.0)
 
 Chương này cung cấp quy trình thiết lập môi trường phát triển cục bộ khép kín (**Offline-First Local Environment**) trên hệ điều hành Windows 11, đảm bảo tính độc lập và khả năng tái lập hoàn toàn (Reproducibility) của toàn bộ đường ống biên dịch.
 
@@ -198,7 +212,7 @@ Mỗi thư viện được khai báo trong `requirements.txt` đều gánh vác 
 
 ---
 
-## CHƯƠNG 4: GIẢI PHẪU LƯỢC ĐỒ CẤU HÌNH TRUNG TÂM (`config/settings.yaml` SCHEMA ANATOMY v2.5.8)
+## CHƯƠNG 4: GIẢI PHẪU LƯỢC ĐỒ CẤU HÌNH TRUNG TÂM (`config/settings.yaml` SCHEMA ANATOMY v2.6.0)
 
 Tệp `config/settings.yaml` giữ vai trò là **Nguồn Sự Thật Duy Nhất (Single Source of Truth - SSOT)** điều phối toàn bộ hành vi của hệ thống. Khi ứng dụng khởi động, toàn bộ tệp này được mô-đun `main.py` nạp và chuyển đổi thành mô hình **Pydantic DTO (`AppConfig`)**.
 
@@ -258,7 +272,7 @@ Dưới đây là bản phân tích chuyên sâu về **Logic Kỹ thuật** và
 
 ---
 
-### 6. CẤU HÌNH MỸ THUẬT VÀ PHÔNG CHỮ HỆ THỐNG (`typography_configuration` - v2.5.8)
+### 6. CẤU HÌNH MỸ THUẬT VÀ PHÔNG CHỮ HỆ THỐNG (`typography_configuration` - v2.6.0)
 
 - **Logic Kỹ thuật:** Thiết lập Font Stack hệ thống bản địa tối ưu hóa cho môi trường Windows 11 song ngữ Anh - Việt.
 
@@ -362,7 +376,7 @@ Toàn bộ các câu lệnh khởi tạo môi trường ảo, nâng cấp pip, c
 ```powershell
 # ==============================================================================
 # HẠ TẦNG THỰC THI: KHỞI TẠO MÔI TRƯỜNG & CÀI ĐẶT THƯ VIỆN (WINDOWS 11 POWERSHELL)
-# Dự án: markdown_to_pdf_engine (Phiên bản v2.5.8)
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.6.0)
 # ==============================================================================
 
 # BƯỚC 1: Khởi tạo Môi trường ảo Python (Virtual Environment) tại thư mục gốc dự án
@@ -383,13 +397,13 @@ playwright install chromium
 
 ---
 
-## CHƯƠNG 5: QUY TRÌNH VẬN HÀNH VÀ BẢN ĐỒ LUỒNG DỮ LIỆU ĐA CHẶNG (OPERATIONAL PIPELINE v2.5.8)
+## CHƯƠNG 5: QUY TRÌNH VẬN HÀNH VÀ BẢN ĐỒ LUỒNG DỮ LIỆU ĐA CHẶNG (OPERATIONAL PIPELINE v2.6.0)
 
-Chương này trình bày chi tiết quy trình di chuyển dữ liệu qua 4 Giai đoạn khép kín được nâng cấp toàn diện trong phiên bản **v2.5.8**, phân tích cơ chế điều phối của tệp `main.py` dựa trên Lược đồ Pydantic DTO, giải phẫu sâu thuật toán Radar Co Giãn Tự Động trong trình duyệt ngầm, và hệ thống 5 tầng bẫy lỗi cô lập sự cố bảo vệ tính toàn vẹn của toàn bộ dây chuyền.
+Chương này trình bày chi tiết quy trình di chuyển dữ liệu qua 4 Giai đoạn khép kín được nâng cấp toàn diện trong phiên bản **v2.6.0**, phân tích cơ chế điều phối của tệp `main.py` dựa trên Lược đồ Pydantic DTO, giải phẫu sâu thuật toán Radar Co Giãn Tự Động trong trình duyệt ngầm, và hệ thống 5 tầng bẫy lỗi cô lập sự cố bảo vệ tính toàn vẹn của toàn bộ dây chuyền.
 
 ---
 
-### 1. SƠ ĐỒ LUỒNG DI CHUYỂN DỮ LIỆU 4 GIAI ĐOẠN (4-STAGE DATA PIPELINE v2.5.8)
+### 1. SƠ ĐỒ LUỒNG DI CHUYỂN DỮ LIỆU 4 GIAI ĐOẠN (4-STAGE DATA PIPELINE v2.6.0)
 
 Hệ thống đường ống dữ liệu biên dịch tài liệu vận hành như một **Dây chuyền Xuất bản Kỹ thuật số Đa Động cơ** bao gồm 4 phân xưởng xử lý nối tiếp nhau:
 
@@ -409,7 +423,7 @@ Hệ thống đường ống dữ liệu biên dịch tài liệu vận hành nh
 └───────────────────────────────────────────┬───────────────────────────────────┘
                                             │
                                             ▼
-[GIAI ĐOẠN 3: PDF COMPILER - NÂNG CẤP v2.5.7]
+[GIAI ĐOẠN 3: PDF COMPILER - NÂNG CẤP v2.6.0]
 - Tệp: src/pdf_compiler.py
 - Động cơ: Playwright Chromium Headless (Chế độ Security Sandbox)
 - Kỹ thuật CSS: Native Formula Box (.formula-box) & Typography Windows 11 (Cascadia Code / Segoe UI)
@@ -436,7 +450,7 @@ Hệ thống đường ống dữ liệu biên dịch tài liệu vận hành nh
   - Nếu `active_engine == "katex_placeholder"`: Động cơ kích hoạt thuật toán **Server-Side Python Dictionary Mapping**. Toàn bộ các vĩ lệnh `\text{...}` chứa tiếng Việt có dấu được bóc tách và lưu vào `self.vn_math_store`, thay thế bằng mã ASCII `VILANGMASK0001` và tiêm script Client-Side Swap để Chromium sử dụng bộ xếp chữ HarfBuzz bản địa hoán đổi lại chuỗi Tiếng Việt nguyên khối ở giai đoạn hậu kỳ.
   - Nếu `active_engine == "mathjax_svg"`: Động cơ tiêm đối tượng cấu hình `window.MathJax` (`fontCache: 'global'`) và nhúng trực tiếp mã nguồn `tex-svg.js` từ `assets/mathjax/` để đúc đồ họa Vector SVG sắc nét.
 
-- **Giai đoạn 3 (PDF Compiler - `src/pdf_compiler.py` - TÁI LẬP CHUYÊN SÂU v2.5.8):**
+- **Giai đoạn 3 (PDF Compiler - `src/pdf_compiler.py` - TÁI LẬP CHUYÊN SÂU v2.6.0):**
   - **Cấp phát Bộ nhớ Tạm:** Cấp phát một tệp HTML trung gian ẩn danh ngẫu nhiên trong bộ nhớ tạm thời thông qua `tempfile.NamedTemporaryFile` với mã hóa tường minh `encoding="utf-8"`.
   - **Đóng gói Ma trận CSS Paged Media Windows 11:**
     1. _Typography Hệ thống:_ Thiết lập Font Stack `"Segoe UI Variable Text"` và `"Segoe UI"` cho văn bản chính, bảo đảm căn chỉnh kerning và dấu thanh Tiếng Việt Unicode NFC chuẩn mực. Khối mã và chữ trong dấu Backtick (`:not(pre) > code`) được trang bị `"Cascadia Code"`, `"Cascadia Mono"` và `Consolas` trên nền xám mờ `rgba(175, 184, 193, 0.22)`.
@@ -450,13 +464,13 @@ Hệ thống đường ống dữ liệu biên dịch tài liệu vận hành nh
 
 ---
 
-### 2. GIẢI PHẪU 5 TẦNG BẪY LỖI CÔ LẬP SỰ CỐ (5-TIER FAULT ISOLATION ARCHITECTURE v2.5.8)
+### 2. GIẢI PHẪU 5 TẦNG BẪY LỖI CÔ LẬP SỰ CỐ (5-TIER FAULT ISOLATION ARCHITECTURE v2.6.0)
 
-Để bảo đảm một tệp Markdown đầu vào bị hỏng cấu trúc hoặc sai định dạng không thể làm sập dây chuyền xử lý hàng loạt của toàn bộ hệ thống, `markdown_to_pdf_engine` v2.5.8 duy trì 5 tầng bẫy lỗi phòng thủ độc lập:
+Để bảo đảm một tệp Markdown đầu vào bị hỏng cấu trúc hoặc sai định dạng không thể làm sập dây chuyền xử lý hàng loạt của toàn bộ hệ thống, `markdown_to_pdf_engine` v2.6.0 duy trì 5 tầng bẫy lỗi phòng thủ độc lập:
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 5 TẦNG BẪY LỖI CÔ LẬP SỰ CỐ ZERO-TRUST (FAULT ISOLATION MATRIX v2.5.8)                           │
+│ 5 TẦNG BẪY LỖI CÔ LẬP SỰ CỐ ZERO-TRUST (FAULT ISOLATION MATRIX v2.6.0)                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
   │
   ├──► [TẦNG 1]: CÔ LẬP NGOẠI LỆ CẤP ĐƠN TỆP (Single-File Failure Isolation)
@@ -494,7 +508,7 @@ Hệ thống đường ống dữ liệu biên dịch tài liệu vận hành nh
 
 ---
 
-## CHƯƠNG 6: MA TRẬN KIỂM THỬ MÔ-ĐUN HỘP TRẮNG (MODULAR PYTEST SUITE v2.5.8)
+## CHƯƠNG 6: MA TRẬN KIỂM THỬ MÔ-ĐUN HỘP TRẮNG (MODULAR PYTEST SUITE v2.6.0)
 
 Dự án áp dụng mô hình kiểm thử **Modular Testing Suite** gồm 6 tệp kiểm thử hộp trắng hoàn toàn độc lập đặt trong thư mục `tests/` với tổng cộng **25 kịch bản kiểm thử tự động**. Hệ thống vận hành trơn tru trên cả hai khung kiểm thử **Pytest** và **Unittest** bản địa.
 
@@ -510,7 +524,7 @@ tests/
 ├── test_01_core_pipeline.py     # [MÔ-ĐUN 01] Kiểm thử I/O, quét đệ quy, cô lập tệp hỏng & batch processing.
 ├── test_02_schema_layout.py     # [MÔ-ĐUN 02] Kiểm thử Pydantic DTO, YAML validation & A4 margin rules.
 ├── test_03_math_base64.py       # [MÔ-ĐUN 03] Kiểm thử ranh giới TeX, Base64 math AST isolation & HTML escaping.
-├── test_04_document_features.py # [MÔ-ĐUN 04 - v2.5.7] Bookmarks Cấp 6, Dynamic Callouts & Native Formula Box.
+├── test_04_document_features.py # [MÔ-ĐUN 04 - v2.6.0] Bookmarks Cấp 6, Dynamic Callouts & Native Formula Box.
 ├── test_05_concurrency_stress.py# [MÔ-ĐUN 05] Kiểm thử ProcessPoolExecutor, tempfile bộ nhớ tạm & Playwright.
 └── test_06_hybrid_math_engine.py# [MÔ-ĐUN 06] Kiểm thử DTO Routing, Python Mapping, MathJax SVG & Boundaries.
 ```
@@ -544,7 +558,7 @@ tests/
   - Kiểm thử cơ chế mã hóa thực thể HTML an toàn (`&lt;` và `&gt;`) cho các toán tử so sánh nhỏ hơn/lớn hơn bên trong biểu thức toán học nhằm ngăn chặn Chromium nhận diện nhầm thành thẻ DOM.
   - Kiểm thử cơ chế dán mặt nạ băm SHA-256 bảo vệ các khối mã nguồn (`code fence`) không bị biến dạng khi màng lọc toán học quét qua.
 
-#### 2.4. `test_04_document_features.py` (Document Typography, Callouts, Bookmarks & Native Formula Box - v2.5.7)
+#### 2.4. `test_04_document_features.py` (Document Typography, Callouts, Bookmarks & Native Formula Box - v2.6.0)
 
 - **Mục tiêu kiểm toán:** Xác thực toàn diện các tính năng mỹ thuật tài liệu nâng cao, Cây Mục lục PyMuPDF Cấp 6, Động cơ Dynamic Obsidian Callouts, Typography Windows 11 và Hộp Công Thức Bản Địa.
 - **Phân tích Chi tiết 7 Kịch bản Kiểm toán:**
@@ -561,7 +575,7 @@ tests/
     1. Các đoạn mã nội dòng đan xen trong văn bản và trong tiêu đề phải sinh ra đúng thẻ `<code>`.
     2. Ký tự phân cấp `>` nằm trong dấu nháy ngược (`` `>` ``) phải được mã hóa an toàn thành `<code>&gt;</code>`.
     3. Bộ CSS Paged Media của `PDFCompiler` bắt buộc phải chứa các bộ chọn phân lập `:not(pre) > code`, `blockquote`, các lớp `.markdown-alert`, và chỉ thị phòng thủ in ấn `break-inside: avoid;`.
-  - **Scenario 17 (`test_scenario_17_native_formula_box_and_css_rules_verification` - MỚI v2.5.7):** Kiểm toán Hộp Công Thức Bản Địa (`.formula-box`) và Ma trận CSS Paged Media. Màng lọc Assertions kiểm tra:
+  - **Scenario 17 (`test_scenario_17_native_formula_box_and_css_rules_verification` - MỚI v2.6.0):** Kiểm toán Hộp Công Thức Bản Địa (`.formula-box`) và Ma trận CSS Paged Media. Màng lọc Assertions kiểm tra:
     1. Thẻ bao bọc `<div class="formula-box">` phải được bảo toàn nguyên vẹn trong HTML kết xuất mà không bị biến dạng.
     2. Biểu thức toán học bên trong hộp phải được nhận diện và chuyển hóa chính xác thành lớp `class="math-tex"` vô trùng, tuyệt đối không bị nhiễm chuỗi thô rác `&gt; [!NOTE]`.
     3. Bộ CSS Paged Media bắt buộc phải định nghĩa lớp `.formula-box` với khung viền `border-left: 5px solid #0969da`, tiêu đề tự động `.formula-box::before` mang nội dung `"📐 Formula (Công Thức)"`, và chỉ thị phòng thủ in ấn `break-inside: avoid !important;`.
@@ -593,7 +607,7 @@ Toàn bộ các câu lệnh kích hoạt môi trường ảo, thực thi toàn b
 ```powershell
 # ==============================================================================
 # HƯỚNG DẪN LỆNH THỰC THI BỘ KIỂM THỬ MÔ-ĐUN (WINDOWS 11 POWERSHELL)
-# Dự án: markdown_to_pdf_engine (Phiên bản v2.5.8)
+# Dự án: markdown_to_pdf_engine (Phiên bản v2.6.0)
 # ==============================================================================
 
 # BƯỚC 1: Kích hoạt Môi trường ảo Python
@@ -653,13 +667,13 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ---
 
-## CHƯƠNG 7: LỊCH SỬ PHIÊN BẢN TOÀN DIỆN (CHANGELOG v2.0.0 - v2.5.8)
+## CHƯƠNG 7: LỊCH SỬ PHIÊN BẢN TOÀN DIỆN (CHANGELOG v2.0.0 - v2.6.0)
 
 Chương này ghi nhận toàn bộ quá trình tiến hóa kiến trúc của dự án `markdown_to_pdf_engine`, từ giai đoạn chuẩn hóa DTO cơ sở, kiến trúc động cơ toán học lai, hệ thống Obsidian Callouts động, cho đến các bản vá giải phẫu chuyên sâu về **Hộp Công Thức Bản Địa (Native Formula Box)**, thuật toán **Radar Ép Khuôn Chân Không (JS Shrink-to-Fit Auto-Scale Radar)** và **Ranh giới Cách ly Tác tử Trí tuệ Nhân tạo (AI Environment Isolation)**.
 
 ---
 
-### Phiên bản v2.5.8 (Bản Vá Cách Ly Môi Trường Tác Tử Trí Tuệ Nhân Tạo & Phòng Thủ Ranh Giới Git - Hiện tại)
+### Phiên bản v2.6.0 (Bản Vá Cách Ly Môi Trường Tác Tử Trí Tuệ Nhân Tạo & Phòng Thủ Ranh Giới Git - Hiện tại)
 
 - **Thiết lập Phân khu An ninh Số 7 trong `.gitignore` (AI Environment Isolation):**
   - _Mục tiêu:_ Thiết lập ranh giới phòng thủ nghiêm ngặt giữa môi trường làm việc cục bộ của tác tử AI và kho lưu trữ mã nguồn mở công khai.
@@ -668,7 +682,7 @@ Chương này ghi nhận toàn bộ quá trình tiến hóa kiến trúc của d
 
 ---
 
-### Phiên bản v2.5.7 (Bản Nâng Cấp Thuật Toán Radar Ép Khuôn Chân Không & Triệt Tiêu Lỗi Co Chữ Siêu Nhỏ)
+### Phiên bản v2.6.0 (Bản Nâng Cấp Thuật Toán Radar Ép Khuôn Chân Không & Triệt Tiêu Lỗi Co Chữ Siêu Nhỏ)
 
 - **Giải phẫu Khám nghiệm Sự cố Kỹ thuật (Post-mortem Analysis: The Microscopic Math & Block-Level Stretch Bug):**
   - _Hiện tượng:_ Sau khi áp dụng thẻ `.formula-box`, các công thức toán ngắn khi xuất bản sang PDF bị thu nhỏ quá mức (bị bóp nghẹt thành kích thước chữ li ti) dù bề ngang trang in A4 vẫn còn rất nhiều khoảng trống.
@@ -685,7 +699,7 @@ Chương này ghi nhận toàn bộ quá trình tiến hóa kiến trúc của d
 
 - **Thực nghiệm Đo đạc Khung nhìn Ảo (Virtual Viewport Investigation):**
   - Ghi nhận và phân tích các trường hợp sai lệch kích thước giữa công thức toán thuần túy và công thức toán chứa văn bản tiếng Việt dài (`\text{...}`).
-  - Xác định chính xác sự khác biệt giữa thuộc tính `clientWidth` của phần tử cha và `scrollWidth` của phần tử con khi chạy ngầm trong Playwright, đặt nền móng cho việc xây dựng kỹ thuật Shrink-to-Fit ở phiên bản v2.5.7.
+  - Xác định chính xác sự khác biệt giữa thuộc tính `clientWidth` của phần tử cha và `scrollWidth` của phần tử con khi chạy ngầm trong Playwright, đặt nền móng cho việc xây dựng kỹ thuật Shrink-to-Fit ở phiên bản v2.6.0.
 
 ---
 
@@ -782,7 +796,7 @@ Chương này ghi nhận toàn bộ quá trình tiến hóa kiến trúc của d
 
 ---
 
-## CHƯƠNG 8 (PHỤ LỤC): CẨM NANG CÚ PHÁP OBSIDIAN CALLOUTS, BẢNG TRA CỨU MÃ MÀU & QUY CHUẨN SOẠN THẢO TOÁN HỌC (SYNTAX & STYLE GUIDE v2.5.8)
+## CHƯƠNG 8 (PHỤ LỤC): CẨM NANG CÚ PHÁP OBSIDIAN CALLOUTS, BẢNG TRA CỨU MÃ MÀU & QUY CHUẨN SOẠN THẢO TOÁN HỌC (SYNTAX & STYLE GUIDE v2.6.0)
 
 Chương này đóng vai trò là tài liệu hướng dẫn thực hành và sổ tay vận hành (**Playbook**) dành cho người dùng soạn thảo tài liệu Markdown cũng như các Hệ thống Trí tuệ Nhân tạo (LLM), chuẩn hóa quy tắc viết Callouts, mã nguồn nội dòng, bảng biểu và biểu thức toán học song ngữ an toàn.
 
@@ -790,7 +804,7 @@ Chương này đóng vai trò là tài liệu hướng dẫn thực hành và s�
 
 ### 1. QUY TẮC CÚ PHÁP OBSIDIAN CALLOUTS VÀ EXTENDED GFM ALERTS
 
-Động cơ `markdown_to_pdf_engine` v2.5.8 hỗ trợ trọn vẹn đặc tả Obsidian Callouts với 3 hình thái linh hoạt:
+Động cơ `markdown_to_pdf_engine` v2.6.0 hỗ trợ trọn vẹn đặc tả Obsidian Callouts với 3 hình thái linh hoạt:
 
 #### 1.1. Cú pháp Khối Tiêu chuẩn (Standard Callout)
 
@@ -908,7 +922,7 @@ Bạn có thể sao chép trực tiếp các mẫu chỉ thị dưới đây và
 ## CHỮ KÝ VẬN HÀNH & BẢO TOÀN HỆ THỐNG (SYSTEM SIGN-OFF)
 
 - **Dự án:** `markdown_to_pdf_engine`
-- **Phiên bản Kiến trúc:** `v2.5.8-production-frozen`
+- **Phiên bản Kiến trúc:** `v2.6.0-production-frozen`
 - **Tiêu chuẩn Thiết kế:** Offline-First, Separation of Concerns (SoC), Zero-Trust Ephemeral Memory, Windows 11 Native Typography.
 - **Trạng thái Kiểm thử:** 25/25 Scenarios Passed (100% Code Coverage trên Pytest & Unittest).
 - **Quyền Sở Hữu & Giấy Phép:** Phân phối nội bộ theo chuẩn MIT License. Toàn bộ mã nguồn và tài nguyên được niêm phong an toàn trên máy trạm cục bộ.

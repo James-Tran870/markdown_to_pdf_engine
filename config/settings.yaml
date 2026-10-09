@@ -125,3 +125,12 @@ academic_standards_profile:
   prevent_orphans_and_widows: true
   code_block_page_break_inside: "avoid"
   table_page_break_inside: "avoid"
+
+# 14. BỘ KẾT XUẤT LƯỢC ĐỒ (DIAGRAM ENGINES CONFIGURATION)
+diagram_engine_config:
+  enable_mermaid: true
+  mermaid_assets_dir: "assets/mermaid"
+  mermaid_js_filename: "mermaid.min.js"
+  enable_d2: true
+  d2_executable_path: "d2"
+  enable_diagram_segmentation: true
