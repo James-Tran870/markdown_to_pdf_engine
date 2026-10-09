@@ -6,6 +6,7 @@ import base64
 import hashlib
 import json
 import re
+import subprocess
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -45,8 +46,9 @@ class HTMLRenderer:
         math_routing_config: dict[str, Any] | None = None,
         mathjax_config: dict[str, Any] | None = None,
         encoding_standard: str = "utf-8",
+        diagram_config: dict[str, Any] | None = None,
     ) -> None:
-        """Khởi tạo cấu hình HTMLRenderer và nạp các tùy chọn Routing, KaTeX, MathJax và Pygments."""
+        """Khởi tạo cấu hình HTMLRenderer và nạp các tùy chọn Routing, KaTeX, MathJax, Diagram và Pygments."""
         self.theme_name = theme_name
         self.max_bookmark_level = max_bookmark_level
         self.enable_heading_anchors = enable_heading_anchors
@@ -89,6 +91,14 @@ class HTMLRenderer:
             "scale": 1.0,
             "inline_math_delimiters": [["$", "$"], ["\\(", "\\)"]],
             "display_math_delimiters": [["$$", "$$"], ["\\[", "\\]"]],
+        }
+
+        self.diagram_config = diagram_config or {
+            "enable_mermaid": True,
+            "mermaid_assets_dir": "assets/mermaid",
+            "mermaid_js_filename": "mermaid.min.js",
+            "enable_d2": True,
+            "d2_executable_path": "d2",
         }
 
         self.vn_math_store: dict[str, str] = {}
@@ -172,10 +182,38 @@ class HTMLRenderer:
     def _render_code_fence(
         self, tokens: list[Any], idx: int, options: dict[str, Any], env: dict[str, Any]
     ) -> str:
-        """Cô lập khối mã 'fence', ngăn chặn rò rỉ ký tự < và >."""
+        """Cô lập khối mã 'fence', bẫy mã lược đồ (Mermaid, D2) và xử lý highlight an toàn."""
         token = tokens[idx]
         code_content = token.content
         language = token.info.strip() if token.info else ""
+
+        if language == "mermaid" and self.diagram_config.get("enable_mermaid", True):
+            # Ép buộc đồ thị mọc dọc (TRIZ Parameter Change) để tránh co rút bề ngang
+            code_content = re.sub(r'\b(graph|flowchart)\s+LR\b', r'\1 TD', code_content)
+            code_content = re.sub(r'\bdirection\s+LR\b', 'direction TB', code_content)
+            # KHÔNG escape html vì mermaid v10.6.1 parse innerHTML sẽ quăng lỗi syntax nếu thấy &gt;
+            return f'<div class="diagram-wrapper mermaid-wrapper" style="text-align: center; margin: 1.5em 0;">\n<div class="mermaid">\n{code_content}\n</div>\n</div>\n'
+            
+        if language == "d2" and self.diagram_config.get("enable_d2", True):
+            try:
+                exe = self.diagram_config.get("d2_executable_path", "d2")
+                # Ép buộc đồ thị D2 mọc dọc (TRIZ Parameter Change)
+                d2_content = f"direction: down\n{code_content}"
+                result = subprocess.run(
+                    [exe, "-", "-"],
+                    input=d2_content.encode("utf-8"),
+                    capture_output=True,
+                    check=True
+                )
+                svg_content = result.stdout.decode("utf-8")
+                return (
+                    f'<style>@page d2_landscape {{ size: A3 landscape; margin: 10mm; }}</style>\n'
+                    f'<div class="diagram-wrapper d2-diagram" style="page: d2_landscape; break-before: page; break-after: page; text-align: center; margin: 0; width: 100%;">\n'
+                    f'{svg_content}\n'
+                    f'</div>\n'
+                )
+            except (subprocess.SubprocessError, OSError) as e:
+                return f'<div class="markdown-alert markdown-alert-danger"><p>Lỗi kết xuất D2: {e}</p><pre>{code_content}</pre></div>\n'
 
         try:
             lexer = (
@@ -378,6 +416,9 @@ class HTMLRenderer:
         auto_render_file = assets_dir / self.katex_config.get("auto_render_js_filename", "auto-render.min.js")
 
         css_content = css_file.read_text(encoding=self.encoding_standard) if css_file.exists() else ""
+        fonts_dir = assets_dir / "fonts"
+        if css_content and fonts_dir.exists():
+            css_content = css_content.replace("url(fonts/", f"url({fonts_dir.as_uri()}/")
         js_content = js_file.read_text(encoding=self.encoding_standard) if js_file.exists() else ""
         auto_render_content = auto_render_file.read_text(encoding=self.encoding_standard) if auto_render_file.exists() else ""
 
@@ -521,6 +562,31 @@ class HTMLRenderer:
             return self._generate_mathjax_assets_and_script()
         return self._generate_katex_assets_and_script()
 
+    def _generate_diagram_assets_and_script(self) -> str:
+        """Đóng gói Mermaid JS offline và kịch bản khởi tạo."""
+        if not self.diagram_config.get("enable_mermaid", True):
+            return ""
+
+        assets_dir = Path(self.diagram_config.get("mermaid_assets_dir", "assets/mermaid")).resolve()
+        js_file = assets_dir / self.diagram_config.get("mermaid_js_filename", "mermaid.min.js")
+        
+        js_content = js_file.read_text(encoding=self.encoding_standard) if js_file.exists() else ""
+        
+        if not js_content:
+            return ""
+            
+        return f"""
+        <!-- KHỐI TÀI NGUYÊN MERMAID DIAGRAM ENGINE (OFFLINE) -->
+        <script>
+        {js_content}
+        </script>
+        <script>
+            if (typeof mermaid !== "undefined") {{
+                mermaid.initialize({{ startOnLoad: true, theme: 'default' }});
+            }}
+        </script>
+        """
+
     def _register_custom_rules(self) -> None:
         """Ghi đè và bổ sung các quy tắc render tùy chỉnh vào markdown-it-py."""
         self.md_engine.add_render_rule("fence", self._render_code_fence)
@@ -564,6 +630,7 @@ class HTMLRenderer:
         )
 
         math_script_block = self._generate_math_assets_and_script()
-        final_html = f"{rendered_html}\n{math_script_block}"
+        diagram_script_block = self._generate_diagram_assets_and_script()
+        final_html = f"{rendered_html}\n{math_script_block}\n{diagram_script_block}"
 
         return pygments_css, final_html

@@ -160,6 +160,16 @@ class AcademicStandardsProfileConfig(BaseModel):
     table_page_break_inside: str = "avoid"
 
 
+class DiagramEngineConfig(BaseModel):
+    """Lược đồ cấu hình động cơ kết xuất lược đồ (Mermaid & D2)."""
+    enable_mermaid: bool = True
+    mermaid_assets_dir: str = "assets/mermaid"
+    mermaid_js_filename: str = "mermaid.min.js"
+    enable_d2: bool = True
+    d2_executable_path: str = "d2"
+    enable_diagram_segmentation: bool = True
+
+
 class AppConfig(BaseModel):
     """Lược đồ tổng thể cho toàn bộ ứng dụng (Global Engine Schema v2.3.0)."""
     global_encoding_standard: str = "utf-8"
@@ -175,6 +185,7 @@ class AppConfig(BaseModel):
     mathjax_offline_config: MathJaxOfflineConfig = Field(default_factory=MathJaxOfflineConfig)
     table_rendering_system: TableRenderingSystemConfig = Field(default_factory=TableRenderingSystemConfig)
     academic_standards_profile: AcademicStandardsProfileConfig = Field(default_factory=AcademicStandardsProfileConfig)
+    diagram_engine_config: DiagramEngineConfig = Field(default_factory=DiagramEngineConfig)
 
 
 # ==============================================================================
@@ -292,6 +303,7 @@ def execute_single_file_pipeline(
         table_config = app_config.table_rendering_system.model_dump()
         numbering_config = app_config.heading_numbering_system.model_dump()
         academic_config = app_config.academic_standards_profile.model_dump()
+        diagram_config = app_config.diagram_engine_config.model_dump()
 
         # 3. Đọc nội dung văn bản thô theo chuẩn UTF-8
         with open(input_md_path, "r", encoding=encoding_standard) as file_stream:
@@ -321,6 +333,7 @@ def execute_single_file_pipeline(
             academic_config=academic_config,
             browser_config=browser_config,
             table_config=table_config,
+            diagram_config=diagram_config,
         )
         compiler.compile_to_pdf(
             html_content=rendered_html,
@@ -460,3 +473,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
